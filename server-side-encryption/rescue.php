@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-	# decrypt-all-files.php
+	# ./server-side-encryption/rescue.php
 	#
 	# Copyright (c) 2019-2023, SysEleven GmbH
 	# All rights reserved.
@@ -10,7 +10,7 @@
 	# usage:
 	# ======
 	#
-	# ./decrypt-all-files.php <targetdir> [<sourcedir>|<sourcefile>]*
+	# ./server-side-encryption/rescue.php <targetdir> [<sourcedir>|<sourcefile>]*
 	#
 	#
 	# description:
@@ -18,7 +18,7 @@
 	#
 	# This script can save your precious files in cases where you encrypted them with the
 	# Nextcloud Server Side Encryption and still have access to the data directory and the
-	# Nextcloud configuration file ("config/config.php"). This script is able to decrypt locally
+	# Nextcloud configuration file (`config/config.php`). This script is able to decrypt locally
 	# stored files within the data directory. It supports master-key encrypted files, user-key
 	# encrypted files and can also use a rescue key (if enabled) and the public sharing key if
 	# files had been publicly shared.
@@ -73,7 +73,7 @@
 	#
 	# To execute the script you have to call it in the following way:
 	#
-	# ./decrypt-all-files.php <targetdir> [<sourcedir>|<sourcefile>]*
+	# ./server-side-encryption/rescue.php <targetdir> [<sourcedir>|<sourcefile>]*
 	#
 	# <targetdir>  (REQUIRED) this is the target directory where the decrypted files get stored,
 	#              the target directory has to already exist and should be empty as already-existing files will be skipped,
@@ -106,7 +106,7 @@
 	define("DEBUG_MODE",         false);
 	define("DEBUG_MODE_VERBOSE", false);
 
-	// nextcloud definitions - you can get these values from config/config.php
+	// nextcloud definitions - you can get these values from `config/config.php`
 	define("DATADIRECTORY", "");
 	define("INSTANCEID",    "");
 	define("SECRET",        "");
