@@ -10,6 +10,10 @@ It supports master-key encrypted files, user-key encrypted files and can also us
 
 ### Updates
 
+**2023-07-12:**
+The script now supports the updated encryption of Nextcloud 27.
+It also supports the increased PBKDF2 iteration count in case the new `hash2` key format is used.
+
 **2023-01-23:**
 The script now also tries to recover files that broke during the execution of `./occ encryption:encrypt-all`.
 
