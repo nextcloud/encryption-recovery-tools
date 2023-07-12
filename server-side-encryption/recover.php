@@ -3,6 +3,7 @@
 
 	# ./server-side-encryption/recover.php
 	#
+	# Copyright (c) 2023,      Yahe <hello@yahe.sh>
 	# Copyright (c) 2019-2023, SysEleven GmbH
 	# All rights reserved.
 	#
@@ -102,36 +103,36 @@
 
 	// ===== USER CONFIGURATION =====
 
-	// debug mode definitions
-	define("DEBUG_MODE",         false);
-	define("DEBUG_MODE_VERBOSE", false);
-
 	// nextcloud definitions - you can get these values from `config/config.php`
 	define("DATADIRECTORY", "");
 	define("INSTANCEID",    "");
 	define("SECRET",        "");
 
 	// recovery password definition
-	define("RECOVERY_PASSWORD", "");
+	// define("RECOVERY_PASSWORD", "");
 
 	// user password definition,
 	// replace "username" with the actual usernames and "password" with the actual passwords,
 	// you can add or remove entries as necessary
-	define("USER_PASSWORDS", array_change_key_case(["username" => "password",
-	                                                "username" => "password",
-	                                                "username" => "password"]));
+	// define("USER_PASSWORDS", array_change_key_case(["username" => "password",
+	//                                                 "username" => "password",
+	//                                                 "username" => "password"]));
 
 	// external storage definition,
 	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
 	// you can add or remove entries as necessary
-	define("EXTERNAL_STORAGES", ["storage" => "/mountpath",
-	                             "storage" => "/mountpath",
-	                             "storage" => "/mountpath"]);
+	// define("EXTERNAL_STORAGES", ["storage" => "/mountpath",
+	//                              "storage" => "/mountpath",
+	//                              "storage" => "/mountpath"]);
 
 	// missing headers definition,
 	// this should only be set to TRUE if you have really old encrypted files that do not contain encryption headers,
 	// in most cases this will rather break unencrypted files that may live alongside your encrypted files
-	define("SUPPORT_MISSING_HEADERS", false);
+	// define("SUPPORT_MISSING_HEADERS", false);
+
+	// debug mode definitions
+	// define("DEBUG_MODE",         false);
+	// define("DEBUG_MODE_VERBOSE", false);
 
 	##### DO NOT EDIT BELOW THIS LINE #####
 
@@ -160,6 +161,7 @@
 	define("HEADER_KEYFORMAT",            "keyFormat");
 	define("HEADER_OC_ENCRYPTION_MODULE", "oc_encryption_module");
 	define("HEADER_SIGNED",               "signed");
+	define("HEADER_USE_LEGACY_FILE_KEY",  "useLegacyFileKey");
 
 	// header values
 	define("HEADER_CIPHER_DEFAULT",               "AES-256-CTR");
@@ -167,10 +169,11 @@
 	define("HEADER_ENCODING_BASE64",              "base64");
 	define("HEADER_ENCODING_BINARY",              "binary");
 	define("HEADER_KEYFORMAT_HASH",               "hash");
+	define("HEADER_KEYFORMAT_HASH2",              "hash2");
 	define("HEADER_KEYFORMAT_PASSWORD",           "password");
 	define("HEADER_OC_ENCRYPTION_MODULE_DEFAULT", "OC_DEFAULT_MODULE");
-	define("HEADER_SIGNED_FALSE",                 "false");
-	define("HEADER_SIGNED_TRUE",                  "true");
+	define("HEADER_VALUE_FALSE",                  "false");
+	define("HEADER_VALUE_TRUE",                   "true");
 
 	// meta entries
 	define("META_ENCRYPTED", "encrypted");
@@ -299,19 +302,30 @@
 				// set default secret key
 				$secretkey = $password;
 
-				// check if we need to generate the password hash,
-				// if so then generate it via PBKDF2 that matches the
-				// required key length for the given cipher
-				if (HEADER_KEYFORMAT_HASH === $header[HEADER_KEYFORMAT]) {
+				// check if we need to generate the password hash
+				$iterations = 0;
+				switch ($header[HEADER_KEYFORMAT]) {
+					case HEADER_KEYFORMAT_HASH:
+						$iterations = 100000;
+						break;
+
+					case HEADER_KEYFORMAT_HASH2:
+						$iterations = 600000;
+						break;
+				}
+
+				// if we need to generate the password then do it via PBKDF2 that matches the
+				// required key length for the given cipher and the chosen iterations count
+				if (0 <= $iterations) {
 					// required before PHP 8.2
 					$salt = hash("sha256", $keyid.INSTANCEID.SECRET, true);
 					if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
-						$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, 100000, CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])], true);
+						$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, $iterations, CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])], true);
 					}
 
 					// usable starting with PHP 8.2
 					// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
-					// 	$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, 100000, openssl_cipher_key_length($header[HEADER_CIPHER]), true);
+					// 	$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, $iterations, openssl_cipher_key_length($header[HEADER_CIPHER]), true);
 					// }
 				}
 
@@ -409,6 +423,13 @@
 		return $result;
 	}
 
+	// only define a constant if it does not exist
+	function defineDefault($key, $value) {
+		if (!defined($key)) {
+			define($key, $value);
+		}
+	}
+
 	// read a file and automagically try to decrypt it in case it is a JSON-wrapped blob
 	function file_get_contents_try_json($filename) {
 		$result = file_get_contents($filename);
@@ -433,7 +454,8 @@
 			$result[HEADER_ENCODING]             = HEADER_ENCODING_BASE64;
 			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
 			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
-			$result[HEADER_SIGNED]               = HEADER_SIGNED_FALSE;
+			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
+			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
 
 			$endAt  = strpos($file, HEADER_END);
 			$header = substr($file, 0, $endAt+strlen(HEADER_END));
@@ -451,7 +473,8 @@
 			$result[HEADER_ENCODING]             = HEADER_ENCODING_BASE64;
 			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
 			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
-			$result[HEADER_SIGNED]               = HEADER_SIGNED_FALSE;
+			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
+			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
 
 			debug("key is using legacy format, setting cipher and key format");
 		}
@@ -499,6 +522,30 @@
 		}
 
 		return $result;
+	}
+
+	// make sure that all definitions exist
+	function prepareDefinitions() {
+		// nextcloud definitions
+		defineDefault("DATADIRECTORY", getcwd());
+		defineDefault("INSTANCEID",    null);
+		defineDefault("SECRET",        null);
+
+		// recovery password definition
+		defineDefault("RECOVERY_PASSWORD", null);
+
+		// user password definition
+		defineDefault("USER_PASSWORDS", []);
+
+		// external storage definition
+		defineDefault("EXTERNAL_STORAGES", []);
+
+		// missing headers definition
+		defineDefault("SUPPORT_MISSING_HEADERS", false);
+
+		// debug mode definitions
+		defineDefault("DEBUG_MODE",         false);
+		defineDefault("DEBUG_MODE_VERBOSE", false);
 	}
 
 	// print messages with a line break
@@ -890,7 +937,6 @@
 								debug("istrashbin = ".($istrashbin ? "true" : "false"));
 								debug("username = $username");
 
-								$isencrypted = false;
 								$keyfolder   = null;
 								$secretkey   = null;
 								$subfolder   = null;
@@ -925,33 +971,34 @@
 								}
 
 								if (is_file($filekeyname)) {
-									$isencrypted = true;
-
 									debug("filekeyname = $filekeyname");
-									debug("isencrypted = ".($isencrypted ? "true" : "false"));
+								}
 
-									foreach ($privatekeys as $key => $value) {
-										$sharekeyname = concatPath($keyfolder,
-										                           $datafilename."/OC_DEFAULT_MODULE/".$key.".shareKey");
-										if (!is_file($sharekeyname)) {
-											// check if we can find a folder with the encryption infix
-											$keylist = recursiveScandir(dirname(concatPath($keyfolder, $datafilename)), false);
-											foreach ($keylist as $keyitem) {
-												if (1 === preg_match("@^".preg_quote(concatPath($keyfolder, $datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
-													// set the alternative sharekey name
-													$sharekeyname = concatPath($keyitem, "/OC_DEFAULT_MODULE/".$key.".shareKey");
+								// try to identify the sharekey
+								foreach ($privatekeys as $key => $value) {
+									$sharekeyname = concatPath($keyfolder,
+									                           $datafilename."/OC_DEFAULT_MODULE/".$key.".shareKey");
+									if (!is_file($sharekeyname)) {
+										// check if we can find a folder with the encryption infix
+										$keylist = recursiveScandir(dirname(concatPath($keyfolder, $datafilename)), false);
+										foreach ($keylist as $keyitem) {
+											if (1 === preg_match("@^".preg_quote(concatPath($keyfolder, $datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
+												// set the alternative sharekey name
+												$sharekeyname = concatPath($keyitem, "/OC_DEFAULT_MODULE/".$key.".shareKey");
 
-													// proceed with the decryption attempt
-													if (is_file($sharekeyname)) {
-														break;
-													}
+												// proceed with the decryption attempt
+												if (is_file($sharekeyname)) {
+													break;
 												}
 											}
 										}
+									}
 
-										if (is_file($sharekeyname)) {
-											debug("sharekeyname = $sharekeyname");
+									if (is_file($sharekeyname)) {
+										debug("sharekeyname = $sharekeyname");
 
+										// try to decrypt legacy file key first
+										if (is_file($filekeyname)) {
 											$filekey  = file_get_contents_try_json($filekeyname);
 											$sharekey = file_get_contents_try_json($sharekeyname);
 											if ((false !== $filekey) && (false !== $sharekey)) {
@@ -959,10 +1006,26 @@
 													$secretkey = $tmpkey;
 													break;
 												} else {
-													debug("secretkey could not be decrypted");
+													debug("secretkey could not be decryptedi from legacy file key");
 												}
 											} else {
 												debug("filekey or sharekey could not be read from file");
+											}
+										}
+
+										// try to decrypt the new share key second,
+										// we also do this when there is a file key in case it is a leftover
+										if (null === $secretkey) {
+											$sharekey = file_get_contents_try_json($sharekeyname);
+											if (false !== $sharekey) {
+												if (openssl_private_decrypt($sharekey, $tmpkey, $privatekeys[$key], OPENSSL_PKCS1_OAEP_PADDING)) {
+													$secretkey = $tmpkey;
+													break;
+												} else {
+													debug("secretkey could not be decrypted");
+												}
+											} else {
+												debug("sharekey could not be read from file");
 											}
 										}
 									}
@@ -975,7 +1038,7 @@
 								}
 
 								// if the file provides all relevant key material then we try to decrypt it
-								if ($isencrypted) {
+								if ((is_file($filekeyname)) || (is_file($sharekeyname))) {
 									if (null !== $secretkey) {
 										debug("trying to decrypt file...");
 
@@ -1030,6 +1093,9 @@
 	// handle the parameters
 	function main($arguments) {
 		$result = 0;
+
+		// prepare configuration values if not set
+		prepareDefinitions();
 
 		debug("debug mode enabled");
 
