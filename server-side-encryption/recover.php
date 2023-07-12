@@ -316,7 +316,7 @@
 
 				// if we need to generate the password then do it via PBKDF2 that matches the
 				// required key length for the given cipher and the chosen iterations count
-				if (0 <= $iterations) {
+				if (0 < $iterations) {
 					// required before PHP 8.2
 					$salt = hash("sha256", $keyid.INSTANCEID.SECRET, true);
 					if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
