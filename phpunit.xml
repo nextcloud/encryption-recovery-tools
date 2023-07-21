@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+  xmlns:xsi                                    = "http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation                = "http://schema.phpunit.de/10.2/phpunit.xsd"
+  cacheDirectory                               = "./tests/cache/"
+  colors                                       = "true"
+  displayDetailsOnIncompleteTests              = "true"
+  displayDetailsOnSkippedTests                 = "true"
+  displayDetailsOnTestsThatTriggerDeprecations = "true"
+  displayDetailsOnTestsThatTriggerErrors       = "true"
+  displayDetailsOnTestsThatTriggerNotices      = "true"
+  displayDetailsOnTestsThatTriggerWarnings     = "true"
+  failOnDeprecation                            = "true"
+  failOnEmptyTestSuite                         = "true"
+  failOnIncomplete                             = "true"
+  failOnNotice                                 = "true"
+  failOnRisky                                  = "true"
+  failOnSkipped                                = "true"
+  failOnWarning                                = "true"
+  processIsolation                             = "true">
+
+  <php>
+    <ini name="memory_limit" value="1G"/>
+  </php>
+
+  <source>
+    <include>
+      <file>server-side-encryption/recover.php</file>
+    </include>
+  </source>
+
+  <testsuites>
+    <testsuite name="server-side-encryption">
+      <directory suffix=".php">tests/src/server-side-encryption</directory>
+      <exclude>./tests/src/server-side-encryption/main.php</exclude>
+    </testsuite>
+  </testsuites>
+
+</phpunit>

@@ -1,0 +1,17 @@
+# do not publish temporary test data
+/tests/cache/**
+/tests/data/**
+/tests/tmp/**
+
+# do not publish macOS blergh
+._*
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+
+# do not publish vim swap file
+*.swp
+
+# keep .gitkeep files
+!.gitkeep
