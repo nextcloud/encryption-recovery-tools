@@ -1,6 +1,7 @@
 # do not export certain files
 /.gitattributes export-ignore
 /.gitignore     export-ignore
+/phpunit.sh     export-ignore
 /phpunit.xml    export-ignore
 /tests          export-ignore
 
