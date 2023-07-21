@@ -33,7 +33,7 @@ then
   exit 4
 fi
 
-# check if the test data repository have been checked out
+# check if the test data repository has been checked out
 echo "Preparing the test data, this could take a while..."
 if [[ -d ./tests/data/server-side-encryption ]]
 then
