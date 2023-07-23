@@ -1154,9 +1154,9 @@
 						if (false === strpos($source, "/")) {
 							$target = normalizePath($targetdir."/".EXTERNAL_PREFIX.$source."/".substr($filename, strlen($path)));
 						} else {
-							$user   = substr($source, 0, strpos($source, "/"));
-							$folder = substr($source, strpos($source, "/")+1);
-							$target = normalizePath($targetdir."/".$user."/".EXTERNAL_PREFIX.$folder."/".substr($filename, strlen($path)));
+							$folder   = substr($source, strpos($source, "/")+1);
+							$username = substr($source, 0, strpos($source, "/"));
+							$target   = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$folder."/".substr($filename, strlen($path)));
 						}
 					}
 					debug("target = $target");
@@ -1200,7 +1200,8 @@
 								$istrashbin   = false;
 								$username     = "";
 							} else {
-								$datafilename = normalizePath(substr($source, strpos($source, "/")+1)."/".substr($filename, strlen($path)));
+								$folder       = substr($source, strpos($source, "/")+1);
+								$datafilename = normalizePath($folder."/".substr($filename, strlen($path)));
 								$istrashbin   = false;
 								$username     = substr($source, 0, strpos($source, "/"));
 							}
@@ -1400,10 +1401,10 @@
 
 			// check if need to show the help instead
 			if (!$printHelp) {
-				debug("debug mode enabled");
-
 				// prepare configuration values if not set
 				prepareConfig();
+
+				debug("debug mode enabled");
 
 				// we want to work with an empty stat cache
 				clearstatcache(true);
