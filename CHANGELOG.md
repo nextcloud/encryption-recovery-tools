@@ -1,5 +1,14 @@
 # Changelog
 
+## v??.?.? (2023-??-??)
+
+* improve path handling
+* introduce decryption support starting at Owncloud 7
+* introduce help output
+* introduce support for environment variables
+* introduce unit tests
+* prevent execution under Windows
+
 ## v27.0.0 (2023-07-12)
 
 * The script now supports the updated encryption of Nextcloud 27 release.

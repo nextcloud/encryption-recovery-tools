@@ -17,56 +17,106 @@
 	# description:
 	# ============
 	#
-	# This script can save your precious files in cases where you encrypted them with the
-	# Nextcloud Server Side Encryption and still have access to the data directory and the
-	# Nextcloud configuration file (`config/config.php`). This script is able to decrypt locally
-	# stored files within the data directory. It supports master-key encrypted files, user-key
-	# encrypted files and can also use a rescue key (if enabled) and the public sharing key if
-	# files had been publicly shared.
+	# This script can save your precious files in cases where you encrypted them with
+	# the Nextcloud Server Side Encryption and still have access to the data
+	# directory and the Nextcloud Server Side Encryption and still have access to the
+	# data directory and the Nextcloud configuration file (`config/config.php`). This
+	# script is able to decrypt locally stored files within the data directory. It
+	# supports master-key encrypted files, user-key encrypted files and can also use
+	# a rescue key (if enabled) and the public sharing key if files had been publicly
+	# shared.
 	#
+	#
+	# configuration:
+	# ==============
 	#
 	# In order to use the script you have to configure the given values below:
 	#
-	# DATADIRECTORY           (REQUIRED) this is the location of the data directory of your Nextcloud instance,
-	#                         if you copied or moved your data directory then you have to set this value accordingly,
-	#                         this directory has to exist and contain the typical file structure of Nextcloud
+	# DATADIRECTORY           this is the location of the data directory of your
+	# (REQUIRED)              Nextcloud instance, if you copied or moved your data
+	#                         directory then you have to set this value accordingly,
+	#                         this directory has to exist and contain the typical file
+	#                         structure of Nextcloud
 	#
-	# INSTANCEID              (REQUIRED) this is a value from the Nextcloud configuration file,
-	#                         there does not seem to be another way to retrieve this value
+	# INSTANCEID              this is a value from the Nextcloud configuration file,
+	# (REQUIRED)              there does not seem to be another way to retrieve this
+	#                         value
 	#
-	# SECRET                  (REQUIRED) this is a value from the Nextcloud configuration file,
-	#                         there does not seem to be another way to retrieve this value
+	# SECRET                  this is a value from the Nextcloud configuration file,
+	# (REQUIRED)              there does not seem to be another way to retrieve this
+	#                         value
 	#
-	# RECOVERY_PASSWORD       (OPTIONAL) this is the password for the recovery key,
-	#                         you can set this value if you activated the recovery feature of your Nextcloud instance,
-	#                         leave this value empty if you did not acticate the recovery feature of your Nextcloud instance
+	# RECOVERY_PASSWORD       this is the password for the recovery key, you can set
+	# (OPTIONAL)              this value if you activated the recovery feature of your
+	#                         Nextcloud instance, leave this value empty if you did
+	#                         not acticate the recovery feature of your Nextcloud
+	#                         instance
 	#
-	# USER_PASSWORDS          (OPTIONAL) these are the passwords for the user keys,
-	#                         you have to set these values if you disabled the master key encryption of your Nextcloud instance,
-	#                         you do not have to set these values if you did not disable the master key encryption of your Nextcloud instance,
-	#                         each value represents a (username, password) pair and you can set as many pairs as necessary
+	# USER_PASSWORDS          these are the passwords for the user keys, you have to
+	# (OPTIONAL)              set these values if you disabled the master key
+	#                         encryption of your Nextcloud instance, you do not have
+	#                         to set these values if you did not disable the master
+	#                         key encryption of your Nextcloud instance, each value
+	#                         represents a (username, password) pair and you can set
+	#                         as many pairs as necessary
 	#
-	#                         Example: if the username was "beispiel" and the password of that user was "example" then the value
-	#                                  has to be set as: define("USER_PASSWORDS", ["beispiel" => "example"]);
+	#                         Example: if the username was "beispiel" and the password
+	#                                  of that user was "example" then the value has
+	#                                  to be set as:
 	#
-	# EXTERNAL_STORAGES       (OPTIONAL) these are the mount paths of external folders,
-	#                         you have to set these values if you used external storages within your Nextcloud instance,
-	#                         each value represents an (external storage, mount path) pair and you can set as many pairs as necessary,
-	#                         the external storage name has to be written as found in the "DATADIRECTORY/files_encryption/keys/files/" folder,
-	#                         if the external storage belongs to a specific user then the name has to contain the username followed by a slash
-	#                         followed by the external storage name as found in the "DATADIRECTORY/$username/files_encryption/keys/files/" folder,
-	#                         the external storage has to be mounted by yourself and the corresponding mount path has to be set
+	#                                  config("USER_PASSWORDS",
+	#                                         ["beispiel" => "example"]);
 	#
-	#                         Example: if the external storage name was "sftp" and you mounted the corresponding SFTP folder as "/mnt/sshfs"
-	#                                  then the value has to be set as: define("EXTERNAL_STORAGES", ["sftp" => "/mnt/sshfs"]);
+	# EXTERNAL_STORAGES       these are the mount paths of external folders, you have
+	# (OPTIONAL)              to set these values if you used external storages within
+	#                         your Nextcloud instance, each value represents an
+	#                         (external storage, mount path) pair and you can set as
+	#                         many pairs as necessary, the external storage name has
+	#                         to be written as found in the
+	#                         "DATADIRECTORY/files_encryption/keys/files/" folder, if
+	#                         the external storage belongs to a specific user then the
+	#                         name has to contain the username followed by a slash
+	#                         followed by the external storage name as found in the
+	#                         "DATADIRECTORY/$username/files_encryption/keys/files/"
+	#                         folder, the external storage has to be mounted by
+	#                         yourself and the corresponding mount path has to be set
 	#
-	#                         Example: if the external storage name was "sftp", the external storage belonged to the user "admin" and you
-	#                                  mounted the corresponding SFTP folder as "/mnt/sshfs" then the value has to be set as:
-	#                                  define("EXTERNAL_STORAGES", ["admin/sftp" => "/mnt/sshfs"]);
+	#                         Example: if the external storage name was "sftp" and you
+	#                                  mounted the corresponding SFTP folder as
+	#                                  "/mnt/sshfs" then the value has to be set as:
 	#
-	# SUPPORT_MISSING_HEADERS (OPTIONAL) this is a value that tells the script if you have encrypted files without headers,
-	#                         this configuration is only needed if you have data from a VERY old OwnCloud/Nextcloud instance,
-	#                         you probably should not set this value as it will break unencrypted files that may live alongside your encrypted files
+	#                                  config("EXTERNAL_STORAGES",
+	#                                         ["sftp" => "/mnt/sshfs"]);
+	#
+	#                         Example: if the external storage name was "sftp", the
+	#                                  external storage belonged to the user "admin"
+	#                                  and you mounted the corresponding SFTP folder
+	#                                  as "/mnt/sshfs" then the value has to be set
+	#                                  as:
+	#
+	#                                  config("EXTERNAL_STORAGES",
+	#                                         ["admin/sftp" => "/mnt/sshfs"]);
+	#
+	# SUPPORT_MISSING_HEADERS this is a value that tells the script if you have
+	# (OPTIONAL)              encrypted files without headers, this configuration is
+	#                         only needed if you have data from a VERY old Owncloud
+	#                         instance, you probably should not set this value as it
+	#                         will break unencrypted files that may live alongside
+	#                         your encrypted files
+	#
+	#
+	# environment variables:
+	# ======================
+	#
+	# All configuration values can alternatively be provided through environment
+	# variables and superseed the information provided within the script. Lists like
+	# EXTERNAL_STORAGES and USER_PASSWORDS must be provided as space-separated
+	# strings.
+	#
+	# Example: if two user passwords shall be provided through an environment
+	#          variable then the corresponding value has to be set as:
+	#
+	#          USER_PASSWORDS="user1=password1 user2=password2"
 	#
 	#
 	# execution:
@@ -76,30 +126,34 @@
 	#
 	# ./server-side-encryption/recover.php <targetdir> [<sourcedir>|<sourcefile>]*
 	#
-	# <targetdir>  (REQUIRED) this is the target directory where the decrypted files get stored,
-	#              the target directory has to already exist and should be empty as already-existing files will be skipped,
-	#              make sure that there is enough space to store all decrypted files in the target directory
+	# The following parameters are supported:
 	#
-	# <sourcedir>  (OPTIONAL) this is the name of the source folder which shall be decrypted,
-	#              the name of the source folder has to be either absolute or relative to the DATADIRECTORY,
-	#              if this parameter is not provided then all files in the data directory will be decrypted
+	# <targetdir>  this is the target directory where the decrypted files get stored,
+	# (REQUIRED)   the target directory has to already exist and should be empty as
+	#              already-existing files will be skipped, make sure that there is
+	#              enough space to store all decrypted files in the target directory
 	#
-	# <sourcefile> (OPTIONAL) this is the name of the source file which shall be decrypted,
-	#              the name of the source file has to be either absolute or relative to the DATADIRECTORY,
-	#              if this parameter is not provided then all files in the data directory will be decrypted
+	# <sourcedir>  this is the name of the source folder which shall be decrypted, the
+	# (OPTIONAL)   name of the source folder has to be either absolute or relative to
+	#              the current working directory, if this parameter is not provided
+	#              then all files in the data directory will be decrypted
 	#
-	# The execution may take a lot of time, depending on the power of your computer and on the number and size of your files.
-	# Make sure that the script is able to run without interruption. As of now it does not have a resume feature. On servers you
-	# can achieve this by starting the script within a screen session.
+	# <sourcefile> this is the name of the source file which shall be decrypted, the
+	# (OPTIONAL)   name of the source file has to be either absolute or relative to
+	#              the current working directory, if this parameter is not provided
+	#              then all files in the data directory will be decrypted
 	#
-	# Also, the script currently does not support the decryption of files in the trashbin that have been deleted from external
-	# storage as Nextcloud creates zero byte files when deleting such a file instead of copying over its actual content.
+	# The execution may take a lot of time, depending on the power of your computer
+	# and on the number and size of your files. Make sure that the script is able to
+	# run without interruption. As of now it does not have a resume feature. On
+	# servers you can achieve this by starting the script within a screen session.
 	#
-	# Windows users: This script heavily relies on pattern matching which assumes that forward slashes ("/") are used as the path
-	#                separators instead of backslashes ("\"). When providing paths to the script either in the configuration or
-	#                through the command line then please make sure to replace all backslashes with forward slashes.
+	# Also, the script currently does not support the decryption of files in the
+	# trashbin that have been deleted from external storage as Nextcloud creates zero
+	# byte files when deleting such a file instead of copying over its actual content.
 	#
-	#                Example: use "C:/foo/bar/" instead of "C:\foo\bar\"
+	# Windows users: This script will not run on Windows. Please use the Windows
+	#                Subsystem for Linux instead.
 
 	// ===== USER CONFIGURATION =====
 
@@ -114,9 +168,9 @@
 	// user password definition,
 	// replace "username" with the actual usernames and "password" with the actual passwords,
 	// you can add or remove entries as necessary
-	// config("USER_PASSWORDS", array_change_key_case(["username" => "password",
-	//                                                 "username" => "password",
-	//                                                 "username" => "password"]));
+	// config("USER_PASSWORDS", ["username" => "password",
+	//                           "username" => "password",
+	//                           "username" => "password"]));
 
 	// external storage definition,
 	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
@@ -204,24 +258,57 @@
 		return $result;
 	}
 
-	// concatenate path pieces fixing leading and trailing slashes
-	function concatPath($directory, $file) {
-		// removing trailing slashes from $directory
-		while ((0 < strlen($directory)) && ("/" === $directory[strlen($directory)-1])) {
-			$directory = substr($directory, 0, -1);
-		}
-
-		// removing leading slashes from $file
-		while ((0 < strlen($file)) && ("/" === $file[0])) {
-			$file = substr($file, 1);
-		}
-
-		// concat $directory and $file with a slash
-		return $directory."/".$file;
-	}
-
 	// only define a constant if it does not exist
 	function config($key, $value) {
+		// overwrite config with environment variable if it is set
+		if (getenv($key)) {
+			// handle specific environment variables differently
+			switch ($key) {
+				// handle as arrays
+				case "CIPHER_SUPPORT":
+				case "EXTERNAL_STORAGES":
+				case "USER_PASSWORDS":
+					$value   = [];
+					$entries = explode(" ", getenv($key));
+					foreach ($entries as $entry) {
+						if (false !== strpos($entry, "=")) {
+							$left         = substr($entry, 0, strpos($entry, "="));
+							$right        = substr($entry, strpos($entry, "=")+1);
+							$value[$left] = $right;
+						}
+					}
+					break;
+
+				// handle as booleans
+				case "DEBUG_MODE":
+				case "DEBUG_MODE_VERBOSE":
+				case "REPLACE_RC4":
+				case "SUPPORT_MISSING_HEADERS":
+					$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+					break;
+
+				default:
+					$value = getenv($key);
+			}
+		}
+
+		// normalize values
+		switch ($key) {
+			case "DATADIRECTORY":
+				$value = normalizePath($value);
+				break;
+
+			case "EXTERNAL_STORAGES":
+				foreach ($value as $key => $entry) {
+					$value[$entry] = normalizePath($entry);
+				}
+				break;
+
+			case "USER_PASSWORDS":
+				$value = array_change_key_case($value);
+				break;
+		}
+
 		if (!defined($key)) {
 			define($key, $value);
 		}
@@ -367,12 +454,12 @@
 		$result = [];
 
 		// as a fallback try the old keyname structure
-		$globaldir = concatPath(DATADIRECTORY, "files_encryption/OC_DEFAULT_MODULE/");
+		$globaldir = normalizePath(DATADIRECTORY."/files_encryption/OC_DEFAULT_MODULE/");
 		if (!is_dir($globaldir)) {
-			$globaldir = concatPath(DATADIRECTORY, "files_encryption/");
+			$globaldir = normalizePath(DATADIRECTORY."/files_encryption/");
 		}
 		if (!is_dir($globaldir)) {
-			$globaldir = concatPath(DATADIRECTORY, "owncloud_private_key/");
+			$globaldir = normalizePath(DATADIRECTORY."/owncloud_private_key/");
 		}
 
 		// try to read generic keys
@@ -383,28 +470,23 @@
 				$keyid    = null;
 				$password = null;
 
-				if (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                     "files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$keyid    = $keyname;
 					$password = SECRET;
-				} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                           "files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$keyid    = "";
 					$password = "";
-				} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                           "files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$keyid    = "";
 					$password = RECOVERY_PASSWORD;
-				} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                           "owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
+				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$keyid    = "";
 					$password = "";
-				} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                           "owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
+				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$keyid    = "";
 					$password = RECOVERY_PASSWORD;
@@ -428,18 +510,17 @@
 		$filelist = recursiveScandir(DATADIRECTORY, false);
 		foreach ($filelist as $filename) {
 			if (is_dir($filename)) {
-				if (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-				                     "(?<keyname>[0-9A-Za-z\.\-\_\@]+)$@", $filename, $matches)) {
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<keyname>[0-9A-Za-z\.\-\_\@]+)$@", $filename, $matches)) {
 					$keyname  = $matches["keyname"];
 					$password = null;
 
 					// as a fallback try the old keyname structure
-					$filename = concatPath(DATADIRECTORY, $keyname."/files_encryption/OC_DEFAULT_MODULE/".$keyname.".privateKey");
+					$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/OC_DEFAULT_MODULE/".$keyname.".privateKey");
 					if (!is_file($filename)) {
-						$filename = concatPath(DATADIRECTORY, $keyname."/files_encryption/".$keyname.".privateKey");
+						$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/".$keyname.".privateKey");
 					}
 					if (!is_file($filename)) {
-						$filename = concatPath(DATADIRECTORY, $keyname."/files_encryption/".$keyname.".private.key");
+						$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/".$keyname.".private.key");
 					}
 
 					// try to retrieve the user password
@@ -474,6 +555,104 @@
 			if (false !== $tmp) {
 				$result = $tmp;
 			}
+		}
+
+		return $result;
+	}
+
+	// get the home directory of the current user
+	function getHomeDir($username = null) {
+		$result = "";
+
+		$pwuid = (null === $username) ? posix_getpwuid(posix_getuid()) : posix_getpwnam($username);
+		if (is_array($pwuid) && array_key_exists("dir", $pwuid)) {
+			$result = $pwuid["dir"];
+		}
+
+		return $result;
+	}
+
+	// normalize path
+	function normalizePath($path, $trailing_slash = false) {
+		// define some placeholders
+		$current  = ".";
+		$empty    = "";
+		$previous = "..";
+		$slash    = "/";
+		$tilde    = "~";
+
+		// preset $result
+		$result = $path;
+
+		// an empty string is interpreted as the current working dir
+		if (0 === strlen($path)) {
+			$path = getcwd();
+		}
+
+		// prepare $path as array
+		$path = explode($slash, $path);
+		if (0 < count($path)) {
+			// prepare $cwd as empty array
+			$cwd = array();
+
+			// check if the starts with a home name
+			if (1 === preg_match("@^~(?<username>.+)$@", $path[0], $matches)) {
+				$cwd = explode($slash, getHomeDir($matches["username"]));
+			} else {
+				switch ($path[0]) {
+					case $current:
+						$cwd = explode($slash, getcwd());
+						break;
+
+					case $empty:
+						array_push($cwd, $empty);
+						break;
+
+					case $previous:
+						$cwd = explode($slash, getcwd());
+						array_pop($cwd);
+						break;
+
+					case $tilde:
+						$cwd = explode($slash, getHomeDir());
+						break;
+
+					default:
+						$cwd = explode($slash, getcwd());
+						array_push($cwd, $path[0]);
+				}
+			}
+
+			// normalize $path
+			for ($index = 1; $index < count($path); $index++) {
+				switch ($path[$index]) {
+					case $current:
+						break;
+
+					case $empty:
+						break;
+
+					case $previous:
+						array_pop($cwd);
+						break;
+
+					default:
+						array_push($cwd, $path[$index]);
+				}
+			}
+
+			// make sure that we are at least in the root directory
+			while (2 > count($cwd)) {
+				array_unshift($cwd, $empty);
+			}
+
+			if ($trailing_slash) {
+				if ((0 < count($cwd)) && ($empty !== $cwd[count($cwd)-1])) {
+					array_push($cwd, $empty);
+				}
+			}
+
+			$result = implode($slash, $cwd);
 		}
 
 		return $result;
@@ -573,10 +752,7 @@
 
 		if (DEBUG_MODE_VERBOSE) {
 			// prepare array for debugging
-			$debug_result = [META_ENCRYPTED => shortenString(bin2hex($result[META_ENCRYPTED]), 131, "...").
-			                                   " (".
-			                                   strlen($result[META_ENCRYPTED]).
-			                                   " bytes)",
+			$debug_result = [META_ENCRYPTED => shortenString(bin2hex($result[META_ENCRYPTED]), 131, "...")." (".strlen($result[META_ENCRYPTED])." bytes)",
 			                 META_IV        => bin2hex($result[META_IV]),
 			                 META_SIGNATURE => $result[META_SIGNATURE]];
 			debug("meta = ".var_export($debug_result, true));
@@ -607,6 +783,49 @@
 		// debug mode definitions
 		config("DEBUG_MODE",         false);
 		config("DEBUG_MODE_VERBOSE", false);
+	}
+
+	// print help text
+	function printHelp() {
+		// load our own source code
+		$source = file(__FILE__, FILE_IGNORE_NEW_LINES);
+
+		// iterate over the source lines
+		$started = false;
+		foreach ($source as $line) {
+			// remove trailing and leading whitespace
+			$line = trim($line);
+
+			// check if the help comment starts
+			if (!$started) {
+				// help comment starts with a hash sign and is not a shebang
+				$started = (0 === strpos($line, "#")) && (1 !== strpos($line, "!"));
+			}
+
+			// print all lines that start with a hash sign
+			if ($started) {
+				if (0 === strpos($line, "#")) {
+					// remove the hash sign
+					$line = substr($line, 1);
+
+					// check if the trimmed line is empty
+					if (0 === strlen(trim($line))) {
+						println("");
+					} else {
+						// otherwise we expect the next character to be a whitespace,
+						// we don't print other lines so that lines from the the help
+						// can be commented out (e.g. through "##")
+						if (0 === strpos($line, " ")) {
+							// remove the whitespace and print the line
+							println(substr($line, 1));
+						}
+					}
+				} else {
+					// break with the first line that differs
+					break;
+				}
+			}
+		}
 	}
 
 	// print messages with a line break
@@ -663,13 +882,13 @@
 			$content = scandir($path);
 			foreach ($content as $content_item) {
 				if (("." !== $content_item) && (".." !== $content_item)) {
-					if (is_file(concatPath($path, $content_item))) {
-						$result[] = concatPath($path, $content_item);
-					} elseif (is_dir(concatPath($path, $content_item))) {
+					if (is_file(normalizePath($path."/".$content_item))) {
+						$result[] = normalizePath($path."/".$content_item);
+					} elseif (is_dir(normalizePath($path."/".$content_item))) {
 						if ($recursive) {
-							$result = array_merge($result, recursiveScandir(concatPath($path, $content_item)));
+							$result = array_merge($result, recursiveScandir(normalizePath($path."/".$content_item)));
 						} else {
-							$result[] = concatPath($path, $content_item);
+							$result[] = normalizePath($path."/".$content_item);
 						}
 					}
 				}
@@ -895,14 +1114,11 @@
 		foreach ($sourcepaths as $path) {
 			// only handle non-empty paths
 			if (0 < strlen($path)) {
-				// make sure that the given path is a full path
-				if ("/" !== $path[0]) {
-					$path = concatPath(DATADIRECTORY, $path);
-				}
-
 				// only add path to source if it exists
 				if (is_file($path) || is_dir($path)) {
 					$sources["\0".count($sources)] = $path;
+				} else {
+					println("WARNING: SOURCE PATH $path DOES NOT EXIST");
 				}
 			}
 		}
@@ -932,22 +1148,21 @@
 					// generate target filename
 					$target = null;
 					if ("\0" === $source[0]) {
-						$target = concatPath($targetdir, substr($filename, strlen(DATADIRECTORY)));
+						$target = normalizePath($targetdir."/".substr($filename, strlen(DATADIRECTORY)));
 					} else {
 						// do we handle a user-specific external storage
 						if (false === strpos($source, "/")) {
-							$target = concatPath(concatPath($targetdir, EXTERNAL_PREFIX.$source),
-							                     substr($filename, strlen($path)));
+							$target = normalizePath($targetdir."/".EXTERNAL_PREFIX.$source."/".substr($filename, strlen($path)));
 						} else {
-							$target = concatPath(concatPath(concatPath($targetdir, substr($source, 0, strpos($source, "/"))),
-							                                EXTERNAL_PREFIX.substr($source, strpos($source, "/")+1)),
-							                     substr($filename, strlen($path)));
+							$user   = substr($source, 0, strpos($source, "/"));
+							$folder = substr($source, strpos($source, "/")+1);
+							$target = normalizePath($targetdir."/".$user."/".EXTERNAL_PREFIX.$folder."/".substr($filename, strlen($path)));
 						}
 					}
 					debug("target = $target");
 
 					// only proceed if the target does not already exist
-					// of if the existing file does not have any content
+					// or if the existing file does not have any content
 					if ((!is_file($target)) || (0 >= filesize($target))) {
 						$success = false;
 
@@ -957,28 +1172,23 @@
 
 						// do we handle the data directory or an external storage
 						if ("\0" === $source[0]) {
-							if (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-							                     "(?<username>[^/]+)/files/(?<datafilename>.+)$@", $filename, $matches)) {
+							if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files/(?<datafilename>.+)$@", $filename, $matches)) {
 								$datafilename = $matches["datafilename"];
 								$istrashbin   = false;
 								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-							                           "(?<username>[^/]+)/files_trashbin/files/(?<datafilename>.+)$@", $filename, $matches)) {
+							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/files/(?<datafilename>.+)$@", $filename, $matches)) {
 								$datafilename = $matches["datafilename"];
 								$istrashbin   = true;
 								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-							                           "(?<username>[^/]+)/files_versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
+							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
 								$datafilename = $matches["datafilename"];
 								$istrashbin   = false;
 								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-							                           "(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+(?<deletetime>\.d[0-9]+)$@", $filename, $matches)) {
+							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+(?<deletetime>\.d[0-9]+)$@", $filename, $matches)) {
 								$datafilename = $matches["datafilename"].$matches["deletetime"];
 								$istrashbin   = true;
 								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(concatPath(DATADIRECTORY, ""), "@").
-							                           "(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
+							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
 								$datafilename = $matches["datafilename"];
 								$istrashbin   = true;
 								$username     = $matches["username"];
@@ -986,13 +1196,11 @@
 						} else {
 							// do we handle a user-specific external storage
 							if (false === strpos($source, "/")) {
-								$datafilename = concatPath($source,
-								                           substr($filename, strlen($path)));
+								$datafilename = normalizePath($source."/".substr($filename, strlen($path)));
 								$istrashbin   = false;
 								$username     = "";
 							} else {
-								$datafilename = concatPath(substr($source, strpos($source, "/")+1),
-								                           substr($filename, strlen($path)));
+								$datafilename = normalizePath(substr($source, strpos($source, "/")+1)."/".substr($filename, strlen($path)));
 								$istrashbin   = false;
 								$username     = substr($source, 0, strpos($source, "/"));
 							}
@@ -1011,46 +1219,34 @@
 							$keyfolder3   = null;
 							$secretkey    = null;
 							$sharekeyname = null;
-							$subfolder1   = null;
-							$subfolder2   = null;
-							$subfolder3   = null;
+							$subfolder    = null;
 
 							if ($istrashbin) {
-								$subfolder1 = "files_trashbin/files";
-								$subfolder2 = "files_trashbin";
-								$subfolder3 = "files_trashbin";
+								$subfolder = "files_trashbin/files";
 							} else {
-								$subfolder1 = "files";
-								$subfolder2 = "";
-								$subfolder3 = "";
+								$subfolder = "files";
 							}
 
 							// prepare the key folder for later use
-							$keyfolder1 = concatPath(DATADIRECTORY,
-							                         $username."/files_encryption/keys/".$subfolder1."/");
-							$keyfolder2 = concatPath(DATADIRECTORY,
-							                         $username."/files_encryption/keys/".$subfolder2."/");
-							$keyfolder3 = concatPath(DATADIRECTORY,
-							                         $username."/files_encryption/".$subfolder3."/");
+							$keyfolder1 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/");
+							$keyfolder2 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/../");
+							$keyfolder3 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/".$subfolder."/../");
 
 							// try to identify the filekey
-							$filekeyname = concatPath($keyfolder1,
-							                          $datafilename."/OC_DEFAULT_MODULE/fileKey");
+							$filekeyname = normalizePath($keyfolder1."/".$datafilename."/OC_DEFAULT_MODULE/fileKey");
 							if (!is_file($filekeyname)) {
-								$filekeyname = concatPath($keyfolder2,
-								                          $datafilename."/fileKey");
+								$filekeyname = normalizePath($keyfolder2."/".$datafilename."/fileKey");
 							}
 							if (!is_file($filekeyname)) {
-								$filekeyname = concatPath($keyfolder3,
-								                          "/keyfiles/".$datafilename.".key");
+								$filekeyname = normalizePath($keyfolder3."/keyfiles/".$datafilename.".key");
 							}
 							if (!is_file($filekeyname)) {
 								// check if we can find a folder with the encryption infix
-								$keylist = recursiveScandir(dirname(concatPath($keyfolder1, $datafilename)), false);
+								$keylist = recursiveScandir(dirname(normalizePath($keyfolder1."/".$datafilename)), false);
 								foreach ($keylist as $keyitem) {
-									if (1 === preg_match("@^".preg_quote(concatPath($keyfolder1, $datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
+									if (1 === preg_match("@^".preg_quote(normalizePath($keyfolder1."/".$datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
 										// set the alternative filekey name
-										$filekeyname = concatPath($keyitem, "/OC_DEFAULT_MODULE/fileKey");
+										$filekeyname = normalizePath($keyitem."/OC_DEFAULT_MODULE/fileKey");
 
 										// proceed with the decryption attempt
 										if (is_file($filekeyname)) {
@@ -1063,23 +1259,20 @@
 
 							// try to identify the sharekey
 							foreach ($privatekeys as $key => $value) {
-								$sharekeyname = concatPath($keyfolder1,
-								                           $datafilename."/OC_DEFAULT_MODULE/".$key.".shareKey");
+								$sharekeyname = normalizePath($keyfolder1."/".$datafilename."/OC_DEFAULT_MODULE/".$key.".shareKey");
 								if (!is_file($sharekeyname)) {
-									$sharekeyname = concatPath($keyfolder2,
-									                           $datafilename."/".$key.".shareKey");
+									$sharekeyname = normalizePath($keyfolder2."/".$datafilename."/".$key.".shareKey");
 								}
 								if (!is_file($sharekeyname)) {
-									$sharekeyname = concatPath($keyfolder3,
-									                           "/share-keys/".$datafilename.".".$key.".shareKey");
+									$sharekeyname = normalizePath($keyfolder3."/share-keys/".$datafilename.".".$key.".shareKey");
 								}
 								if (!is_file($sharekeyname)) {
 									// check if we can find a folder with the encryption infix
-									$keylist = recursiveScandir(dirname(concatPath($keyfolder1, $datafilename)), false);
+									$keylist = recursiveScandir(dirname(normalizePath($keyfolder1."/".$datafilename)), false);
 									foreach ($keylist as $keyitem) {
-										if (1 === preg_match("@^".preg_quote(concatPath($keyfolder1, $datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
+										if (1 === preg_match("@^".preg_quote(normalizePath($keyfolder1."/".$datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
 											// set the alternative sharekey name
-											$sharekeyname = concatPath($keyitem, "/OC_DEFAULT_MODULE/".$key.".shareKey");
+											$sharekeyname = normalizePath($keyitem."/OC_DEFAULT_MODULE/".$key.".shareKey");
 
 											// proceed with the decryption attempt
 											if (is_file($sharekeyname)) {
@@ -1191,46 +1384,72 @@
 	function main($arguments) {
 		$result = 0;
 
-		// prepare configuration values if not set
-		prepareConfig();
-
-		debug("debug mode enabled");
-
-		// we want to work with an empty stat cache
-		clearstatcache(true);
-
-		if (is_dir(DATADIRECTORY)) {
-			$targetdir = null;
-			if (2 <= count($arguments)) {
-				$targetdir = $arguments[1];
-			}
-
-			$sourcepaths = [];
-			if (3 <= count($arguments)) {
-				$sourcepaths = array_slice($arguments, 2);
-			}
-
-			if ((null !== $targetdir) && is_dir($targetdir)) {
-				if (!decryptFiles($targetdir, $sourcepaths)) {
-					print("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
-					$result = 3;
+		// prevent executiong on Windows, we will need function calls
+		// and path identification that are only tested on Linux
+		if ("Windows" !== PHP_OS_FAMILY) {
+			// check if we are expected to print the help
+			$printHelp = (1 >= count($arguments));
+			if (!$printHelp) {
+				foreach ($arguments as $argument) {
+					$printHelp = (("-h" === $argument) || ("--help" === $argument));
+					if ($printHelp) {
+						break;
+					}
 				}
+			}
+
+			// check if need to show the help instead
+			if (!$printHelp) {
+				debug("debug mode enabled");
+
+				// prepare configuration values if not set
+				prepareConfig();
+
+				// we want to work with an empty stat cache
+				clearstatcache(true);
+
+				if (is_dir(DATADIRECTORY)) {
+					$targetdir = null;
+					if (2 <= count($arguments)) {
+						$targetdir = normalizePath($arguments[1]);
+					}
+
+					$sourcepaths = [];
+					if (3 <= count($arguments)) {
+						$sourcepaths = array_slice($arguments, 2);
+						foreach ($sourcepaths as $key => $value) {
+							$sourcepaths[$key] = normalizePath($value);
+						}
+					}
+
+					if ((null !== $targetdir) && is_dir($targetdir)) {
+						if (!decryptFiles($targetdir, $sourcepaths)) {
+							print("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+							$result = 4;
+						}
+					} else {
+						println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
+						$result = 3;
+					}
+				} else {
+					println("ERROR: DATADIRECTORY DOES NOT EXIST");
+					$result = 2;
+				}
+
+				debug("exiting");
 			} else {
-				println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
-				$result = 2;
+				printHelp();
 			}
 		} else {
-			println("ERROR: DATADIRECTORY DOES NOT EXIST");
+			println("ERROR: DO NOT EXECUTE ON WINDOWS, USE THE WINDOWS SUBSYSTEM FOR LINUX INSTEAD");
 			$result = 1;
 		}
-
-		debug("exiting");
 
 		return $result;
 	}
 
 	// do not execute main() when we in TESTING mode
-	if (!defined("TESTING")) {
+	if ((!defined("TESTING")) && (!getenv("TESTING"))) {
 		// main entrypoint
 		exit(main($argv));
 	}
