@@ -1218,6 +1218,7 @@
 							$keyfolder1   = null;
 							$keyfolder2   = null;
 							$keyfolder3   = null;
+							$keyfolder4   = null;
 							$secretkey    = null;
 							$sharekeyname = null;
 							$subfolder    = null;
@@ -1232,6 +1233,7 @@
 							$keyfolder1 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/");
 							$keyfolder2 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/../");
 							$keyfolder3 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/".$subfolder."/../");
+							$keyfolder4 = normalizePath(DATADIRECTORY."/".$username."/".$subfolder."/../");
 
 							// try to identify the filekey
 							$filekeyname = normalizePath($keyfolder1."/".$datafilename."/OC_DEFAULT_MODULE/fileKey");
@@ -1240,6 +1242,17 @@
 							}
 							if (!is_file($filekeyname)) {
 								$filekeyname = normalizePath($keyfolder3."/keyfiles/".$datafilename.".key");
+							}
+							if (!is_file($filekeyname)) {
+								$filekeyname = normalizePath($keyfolder4."/keyfiles/".$datafilename.".key");
+							}
+							if (!is_file($filekeyname)) {
+								if (1 === preg_match("@^(?<filename>.+)\.(?<deletetime>d[0-9]+)$@", $datafilename, $matches)) {
+									$filekeyname = normalizePath($keyfolder4."/keyfiles/".$matches["filename"].".key.".$matches["deletetime"]);
+								}
+							}
+							if (!is_file($filekeyname)) {
+								$filekeyname = normalizePath($keyfolder4."/keys/".$datafilename."/fileKey");
 							}
 							if (!is_file($filekeyname)) {
 								// check if we can find a folder with the encryption infix
@@ -1266,6 +1279,17 @@
 								}
 								if (!is_file($sharekeyname)) {
 									$sharekeyname = normalizePath($keyfolder3."/share-keys/".$datafilename.".".$key.".shareKey");
+								}
+								if (!is_file($sharekeyname)) {
+									$sharekeyname = normalizePath($keyfolder4."/share-keys/".$datafilename.".".$key.".shareKey");
+								}
+								if (!is_file($sharekeyname)) {
+									if (1 === preg_match("@^(?<filename>.+)\.(?<deletetime>d[0-9]+)$@", $datafilename, $matches)) {
+										$sharekeyname = normalizePath($keyfolder4."/share-keys/".$matches["filename"].".".$key.".shareKey.".$matches["deletetime"]);
+									}
+								}
+								if (!is_file($sharekeyname)) {
+									$sharekeyname = normalizePath($keyfolder4."/keys/".$datafilename."/".$key.".shareKey");
 								}
 								if (!is_file($sharekeyname)) {
 									// check if we can find a folder with the encryption infix
@@ -1425,7 +1449,7 @@
 
 					if ((null !== $targetdir) && is_dir($targetdir)) {
 						if (!decryptFiles($targetdir, $sourcepaths)) {
-							print("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+							println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
 							$result = 4;
 						}
 					} else {
