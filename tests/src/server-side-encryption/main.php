@@ -10,6 +10,7 @@ include_once(__DIR__."/main.php");
 
 final class <classname> extends main
 {
+	const EXTERNAL_STORAGES = [];
 	const INSTANCEID        = "";
 	const RECOVERY_PASSWORD = "recovery";
 	const SECRET            = "";
@@ -23,6 +24,19 @@ final class <classname> extends main
 
 class main extends PHPUnit\Framework\TestCase
 {
+	// set this to true to debug problems
+	const SHOW_OUTPUT=false;
+
+	protected static function array_to_env($array) {
+		$result = [];
+
+		foreach ($array as $key => $value) {
+			$result[] = "$key=$value";
+		}
+
+		return implode(" ", $result);
+	}
+
 	protected static function clear_dir($path) {
 		if (is_dir($path)) {
 			$content = scandir($path);
@@ -88,19 +102,25 @@ class main extends PHPUnit\Framework\TestCase
 
 	public function test() {
 		if (is_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/test/")) {
-			define("TESTING",        true);
-			define("DATADIRECTORY",  __DIR__."/../../data/server-side-encryption/".static::VERSION."/test/");
-			define("INSTANCEID",     static::INSTANCEID);
-			define("SECRET",         static::SECRET);
-			define("USER_PASSWORDS", static::USER_PASSWORDS);
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/test/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("INSTANCEID=".        static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            static::SECRET);
+			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
-			prepareConfig();
-
-			ob_start();
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
 			$result = main([__FILE__, __DIR__."/../../tmp/"]);
-			ob_end_clean();
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
 
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/original/",
@@ -113,18 +133,25 @@ class main extends PHPUnit\Framework\TestCase
 
 	public function test_master() {
 		if (is_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/master/")) {
-			define("TESTING",       true);
-			define("DATADIRECTORY", __DIR__."/../../data/server-side-encryption/".static::VERSION."/master/");
-			define("INSTANCEID",    static::INSTANCEID);
-			define("SECRET",        static::SECRET);
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/master/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("INSTANCEID=".        static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            static::SECRET);
+			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
-			prepareConfig();
-
-			ob_start();
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
 			$result = main([__FILE__, __DIR__."/../../tmp/"]);
-			ob_end_clean();
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
 
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/original/",
@@ -137,18 +164,25 @@ class main extends PHPUnit\Framework\TestCase
 
 	public function test_pubshare() {
 		if (is_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/pubshare/")) {
-			define("TESTING",       true);
-			define("DATADIRECTORY", __DIR__."/../../data/server-side-encryption/".static::VERSION."/pubshare/");
-			define("INSTANCEID",    static::INSTANCEID);
-			define("SECRET",        static::SECRET);
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/pubshare/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("INSTANCEID=".        static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            static::SECRET);
+			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
-			prepareConfig();
-
-			ob_start();
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
 			$result = main([__FILE__, __DIR__."/../../tmp/"]);
-			ob_end_clean();
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
 
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/original/",
@@ -161,19 +195,25 @@ class main extends PHPUnit\Framework\TestCase
 
 	public function test_recovery() {
 		if (is_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/recovery/")) {
-			define("TESTING",           true);
-			define("DATADIRECTORY",     __DIR__."/../../data/server-side-encryption/".static::VERSION."/recovery/");
-			define("INSTANCEID",        static::INSTANCEID);
-			define("RECOVERY_PASSWORD", static::RECOVERY_PASSWORD);
-			define("SECRET",            static::SECRET);
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/recovery/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("INSTANCEID=".        static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            static::SECRET);
+			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
-			prepareConfig();
-
-			ob_start();
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
 			$result = main([__FILE__, __DIR__."/../../tmp/"]);
-			ob_end_clean();
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
 
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/original/",
@@ -186,19 +226,25 @@ class main extends PHPUnit\Framework\TestCase
 
 	public function test_user() {
 		if (is_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/user/")) {
-			define("TESTING",        true);
-			define("DATADIRECTORY",  __DIR__."/../../data/server-side-encryption/".static::VERSION."/user/");
-			define("INSTANCEID",     static::INSTANCEID);
-			define("SECRET",         static::SECRET);
-			define("USER_PASSWORDS", static::USER_PASSWORDS);
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/user/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("INSTANCEID=".        static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            static::SECRET);
+			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
-			prepareConfig();
-
-			ob_start();
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
 			$result = main([__FILE__, __DIR__."/../../tmp/"]);
-			ob_end_clean();
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
 
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/server-side-encryption/".static::VERSION."/original/",
