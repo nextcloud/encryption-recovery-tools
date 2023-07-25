@@ -720,7 +720,7 @@
 				           FILE_USERNAME      => $matches["username"],
 				           FILE_VERSION       => true,
 				           FILE_VERSION_TIME  => $matches["versionnumber"]];
-			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_versions/(?<filename>.+)\.v$(?<versionnumber>[0-9]+)@", $filename, $matches)) {
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_versions/(?<filename>.+)\.v(?<versionnumber>[0-9]+)$@", $filename, $matches)) {
 				$result = [FILE_FILE          => $filename,
 				           FILE_NAME          => $matches["filename"],
 				           FILE_NAME_RAW      => $matches["filename"],
