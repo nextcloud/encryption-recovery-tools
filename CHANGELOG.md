@@ -2,11 +2,11 @@
 
 ## v??.?.? (2023-??-??)
 
-* improve path handling
-* introduce decryption support starting at Owncloud 7
-* introduce help output
+* introduce decryption support for Owncloud 7 and later
+* heavily improve the path handling
+* introduce unit tests for most of the code
 * introduce support for environment variables
-* introduce unit tests
+* introduce help output for better user experience
 * prevent execution under Windows
 
 ## v27.0.0 (2023-07-12)
