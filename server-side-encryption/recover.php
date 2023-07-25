@@ -201,11 +201,22 @@
 	                          "AES-256-CFB" => 32,
 	                          "AES-128-CFB" => 16]);
 
-	// infix used by encryption:encrypt-all
-	config("ENCRYPTION_INFIX", ".encrypted.");
+	// filename parts used by encryption:encrypt-all
+	config("ENCRYPTION_INFIX",  ".encrypted.");
+	config("ENCRYPTION_SUFFIX", ".part");
 
 	// prefix of decrypted external storages
 	config("EXTERNAL_PREFIX", "EXTERNAL_");
+
+	// file entries
+	config("FILE_FILE",          "file");
+	config("FILE_NAME",          "name");
+	config("FILE_NAME_RAW",      "name_raw");
+	config("FILE_TRASHBIN",      "trashbin");
+	config("FILE_TRASHBIN_TIME", "trashbin_time");
+	config("FILE_USERNAME",      "username");
+	config("FILE_VERSION",       "version");
+	config("FILE_VERSION_TIME",  "version_number");
 
 	// header entries
 	config("HEADER_BEGIN",                "HBEGIN");
@@ -228,6 +239,12 @@
 	config("HEADER_OC_ENCRYPTION_MODULE_DEFAULT", "OC_DEFAULT_MODULE");
 	config("HEADER_VALUE_FALSE",                  "false");
 	config("HEADER_VALUE_TRUE",                   "true");
+
+	// key entries
+	config("KEY_FILE",     "file");
+	config("KEY_ID",       "id");
+	config("KEY_NAME",     "name");
+	config("KEY_PASSWORD", "password");
 
 	// meta entries
 	config("META_ENCRYPTED", "encrypted");
@@ -346,13 +363,23 @@
 						$iv = hex2bin($iv);
 					}
 					if (intval($version) === 3) {
-						$temp      = hash_hkdf("sha512", $secretkey);
+						$temp      = hash_hkdf("sha512",
+						                       $secretkey);
 						$secretkey = substr($temp, 0, 32);
 					}
 				}
 
-				$secretkey  = hash_pbkdf2("sha1", $secretkey, "phpseclib", 1000, 16, true);
-				$json       = openssl_decrypt($ciphertext, "aes-128-cbc", $secretkey, OPENSSL_RAW_DATA, $iv);
+				$secretkey  = hash_pbkdf2("sha1",
+				                          $secretkey,
+				                          "phpseclib",
+				                          1000,
+				                          16,
+				                          true);
+				$json       = openssl_decrypt($ciphertext,
+				                              "aes-128-cbc",
+				                              $secretkey,
+				                              OPENSSL_RAW_DATA,
+				                              $iv);
 				if (false !== $json) {
 					$json = json_decode($json, true);
 					if (is_array($json)) {
@@ -387,11 +414,11 @@
 		$meta = parseMetaData($meta);
 
 		if (is_array($header) && is_array($meta)) {
-			if (array_key_exists(HEADER_CIPHER, $header) &&
-			    array_key_exists(HEADER_ENCODING, $header) &&
+			if (array_key_exists(HEADER_CIPHER,    $header) &&
+			    array_key_exists(HEADER_ENCODING,  $header) &&
 			    array_key_exists(HEADER_KEYFORMAT, $header) &&
-			    array_key_exists(META_ENCRYPTED, $meta) &&
-			    array_key_exists(META_IV, $meta)) {
+			    array_key_exists(META_ENCRYPTED,   $meta)   &&
+			    array_key_exists(META_IV,          $meta)) {
 				// set default secret key
 				$secretkey = $password;
 
@@ -453,93 +480,77 @@
 	function decryptPrivateKeys() {
 		$result = [];
 
-		// as a fallback try the old keyname structure
-		$globaldir = normalizePath(DATADIRECTORY."/files_encryption/OC_DEFAULT_MODULE/");
-		if (!is_dir($globaldir)) {
-			$globaldir = normalizePath(DATADIRECTORY."/files_encryption/");
-		}
-		if (!is_dir($globaldir)) {
-			$globaldir = normalizePath(DATADIRECTORY."/owncloud_private_key/");
-		}
+		$keys = array_merge(searchSystemKeys(),
+		                    searchUserKeys());
+		foreach ($keys as $key) {
+			$file = file_get_contents_try_json($key[KEY_FILE]);
+			if (false !== $file) {
+				$privatekey = decryptPrivateKey($file, $key[KEY_PASSWORD], $key[KEY_ID]);
+				if (false !== $privatekey) {
+					$result[$key[KEY_NAME]] = $privatekey;
 
-		// try to read generic keys
-		$filelist = recursiveScandir($globaldir, true);
-		foreach ($filelist as $filename) {
-			if (is_file($filename)) {
-				$keyname  = null;
-				$keyid    = null;
-				$password = null;
-
-				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$keyid    = $keyname;
-					$password = SECRET;
-				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$keyid    = "";
-					$password = "";
-				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$keyid    = "";
-					$password = RECOVERY_PASSWORD;
-				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$keyid    = "";
-					$password = "";
-				} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$keyid    = "";
-					$password = RECOVERY_PASSWORD;
-				}
-
-				if (null !== $keyname) {
-					$file = file_get_contents_try_json($filename);
-					if (false !== $file) {
-						$privatekey = decryptPrivateKey($file, $password, $keyid);
-						if (false !== $privatekey) {
-							$result[$keyname] = $privatekey;
-
-							debug("loaded private key for $keyname");
-						}
-					}
+					debug("loaded private key for ".$key[KEY_NAME]);
 				}
 			}
 		}
 
-		// try to read user keys
-		$filelist = recursiveScandir(DATADIRECTORY, false);
-		foreach ($filelist as $filename) {
-			if (is_dir($filename)) {
-				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<keyname>[0-9A-Za-z\.\-\_\@]+)$@", $filename, $matches)) {
-					$keyname  = $matches["keyname"];
-					$password = null;
+		return $result;
+	}
 
-					// as a fallback try the old keyname structure
-					$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/OC_DEFAULT_MODULE/".$keyname.".privateKey");
-					if (!is_file($filename)) {
-						$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/".$keyname.".privateKey");
-					}
-					if (!is_file($filename)) {
-						$filename = normalizePath(DATADIRECTORY."/".$keyname."/files_encryption/".$keyname.".private.key");
-					}
+	// try to find and decrypt the secret key for the parsed filename
+	function decryptSecretKey($parsed, $privatekeys) {
+		$result = null;
 
-					// try to retrieve the user password
-					if (array_key_exists(strtolower($keyname), USER_PASSWORDS)) {
-						$password = USER_PASSWORDS[strtolower($keyname)];
-					}
+		// retrieve all potential key material
+		$filekeys  = searchFileKeys($parsed);
+		$sharekeys = searchShareKeys($parsed, array_keys($privatekeys));
 
-					if (is_file($filename) && (null !== $password)) {
-						$file = file_get_contents_try_json($filename);
-						if (false !== $file) {
-							$privatekey = decryptPrivateKey($file, $password, $keyname);
-							if (false !== $privatekey) {
-								$result[$keyname] = $privatekey;
-
-								debug("loaded private key for $keyname");
-							}
+		foreach ($sharekeys as $keyname => $sharekeyname) {
+			$sharekey = file_get_contents_try_json($sharekeyname);
+			if (false !== $sharekey) {
+				// try to decrypt legacy file key first
+				foreach ($filekeys as $filekeyname) {
+					$filekey = file_get_contents_try_json($filekeyname);
+					if (false !== $filekey) {
+						if (wrapped_openssl_open($filekey,
+						                         $tmpkey,
+						                         $sharekey,
+						                         $privatekeys[$keyname],
+						                         "rc4")) {
+							$result = $tmpkey;
+						} else {
+							debug("secretkey could not be decrypted from legacy file key...");
 						}
+					} else {
+						debug("filekey could not be read from file...");
+					}
+
+					// exit the loop
+					if (null !== $result) {
+						break;
 					}
 				}
+
+				// try to decrypt the new share key second,
+				// we also do this when there is a file key in case it is a leftover
+				if (null === $result) {
+					if (openssl_private_decrypt($sharekey,
+					                            $tmpkey,
+					                            $privatekeys[$keyname],
+					                            OPENSSL_PKCS1_OAEP_PADDING)) {
+						$result = $tmpkey;
+					} else {
+						debug("openssl_private_decrypt() failed: ".openssl_error_string());
+						debug("secretkey could not be decrypted...");
+					}
+				}
+			} else {
+				debug("sharekey could not be read from file...");
+			}
+
+			// exit the loop
+			if (null !== $result) {
+				break;
 			}
 		}
 
@@ -653,6 +664,95 @@
 			}
 
 			$result = implode($slash, $cwd);
+		}
+
+		return $result;
+	}
+
+	// try to parse the filename
+	function parseFilename($filename, $source_name = null, $source_path = null) {
+		$result = [];
+
+		// do we handle the data directory or an external storage
+		if ((null === $source_name) || (null === $source_path)) {
+			if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files/(?<filename>.+)$@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["filename"],
+				           FILE_NAME_RAW      => $matches["filename"],
+				           FILE_TRASHBIN      => false,
+				           FILE_TRASHBIN_TIME => "",
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => false,
+				           FILE_VERSION_TIME  => ""];
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/files/(?<foldername>[^/]+)\.d(?<trashbintime>[0-9]+)/(?<filename>.+)$@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["foldername"].".d".$matches["trashbintime"]."/".$matches["filename"],
+				           FILE_NAME_RAW      => $matches["foldername"].".d".$matches["trashbintime"]."/".$matches["filename"],
+				           FILE_TRASHBIN      => true,
+				           FILE_TRASHBIN_TIME => $matches["trashbintime"],
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => false,
+				           FILE_VERSION_TIME  => ""];
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/files/(?<filename>.+)\.d(?<trashbintime>[0-9]+)$@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["filename"].".d".$matches["trashbintime"],
+				           FILE_NAME_RAW      => $matches["filename"],
+				           FILE_TRASHBIN      => true,
+				           FILE_TRASHBIN_TIME => $matches["trashbintime"],
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => false,
+				           FILE_VERSION_TIME  => ""];
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<foldername>[^/]+)\.d(?<trashbintime>[0-9]+)/(?<filename>.+)\.v(?<versionnumber>[0-9]+)$@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["foldername"].".d".$matches["trashbintime"]."/".$matches["filename"],
+				           FILE_NAME_RAW      => $matches["foldername"].".d".$matches["trashbintime"]."/".$matches["filename"],
+				           FILE_TRASHBIN      => true,
+				           FILE_TRASHBIN_TIME => $matches["trashbintime"],
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => true,
+				           FILE_VERSION_TIME  => $matches["versionnumber"]];
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<filename>.+)\.v(?<versionnumber>[0-9]+)\.d(?<trashbintime>[0-9]+)$@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["filename"].".d".$matches["trashbintime"],
+				           FILE_NAME_RAW      => $matches["filename"],
+				           FILE_TRASHBIN      => true,
+				           FILE_TRASHBIN_TIME => $matches["trashbintime"],
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => true,
+				           FILE_VERSION_TIME  => $matches["versionnumber"]];
+			} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_versions/(?<filename>.+)\.v$(?<versionnumber>[0-9]+)@", $filename, $matches)) {
+				$result = [FILE_FILE          => $filename,
+				           FILE_NAME          => $matches["filename"],
+				           FILE_NAME_RAW      => $matches["filename"],
+				           FILE_TRASHBIN      => false,
+				           FILE_TRASHBIN_TIME => "",
+				           FILE_USERNAME      => $matches["username"],
+				           FILE_VERSION       => true,
+				           FILE_VERSION_TIME  => $matches["versionnumber"]];
+			}
+		} else {
+			$foldername = "";
+			$username   = "";
+
+			// do we handle a user-specific external storage
+			if (false === strpos($source_name, "/")) {
+				$foldername = $source_name;
+			} else {
+				$foldername = substr($source_name, strpos($source_name, "/")+1);
+				$username   = substr($source_name, 0, strpos($source_name, "/"));
+			}
+
+			$result = [FILE_FILE          => $filename,
+			           FILE_NAME          => $foldername."/".substr($filename, strlen($source_path)),
+			           FILE_TRASHBIN      => false,
+			           FILE_TRASHBIN_TIME => "",
+			           FILE_USERNAME      => $username,
+			           FILE_VERSION       => false,
+			           FILE_VERSION_TIME  => ""];
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("parsed = ".var_export($result, true));
 		}
 
 		return $result;
@@ -785,6 +885,53 @@
 		config("DEBUG_MODE_VERBOSE", false);
 	}
 
+	// prepare all source paths
+	function prepareSources($sources) {
+		$result = [];
+
+		// set sources to all items in the data directory
+		if ((null === $sources) || (0 === count($sources))) {
+			// do a scandir to flatten the execution a bit,
+			// this way not the whole file structure will have
+			// to be pulled into the memory at once
+			$sources = recursiveScandir(DATADIRECTORY, false);
+		}
+
+		// clean-up the sources
+		foreach ($sources as $source) {
+			// normalize all sources
+			$source = normalizePath($source);
+
+			// only handle non-empty sources
+			if (0 < strlen($source)) {
+				// only add source to result if it exists
+				if (is_file($source) || is_dir($source)) {
+					$result["\0".count($result)] = $source;
+				} else {
+					println("WARNING: SOURCE PATH $source DOES NOT EXIST");
+				}
+			}
+		}
+
+		// add external storage folders as sources
+		foreach (EXTERNAL_STORAGES as $key => $value) {
+			// normalize all sources
+			$value = normalizePath($value);
+
+			if (is_dir($value)) {
+				$result[$key] = $value;
+			} else {
+				println("WARNING: EXTERNAL STORAGE $value DOES NOT EXIST");
+			}
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("sources = ".var_export($result, true));
+		}
+
+		return $result;
+	}
+
 	// print help text
 	function printHelp() {
 		// load our own source code
@@ -898,6 +1045,190 @@
 		return $result;
 	}
 
+	// test different filename structures for the filekey
+	function searchFileKeys($parsed) {
+		$result = [];
+
+		if (is_array($parsed)) {
+			if (array_key_exists(FILE_NAME,          $parsed) &&
+			    array_key_exists(FILE_NAME_RAW,      $parsed) &&
+			    array_key_exists(FILE_TRASHBIN,      $parsed) &&
+			    array_key_exists(FILE_TRASHBIN_TIME, $parsed) &&
+			    array_key_exists(FILE_USERNAME,      $parsed)) {
+				// set trashbin path
+				$trashbin = ($parsed[FILE_TRASHBIN]) ? "files_trashbin" : "";
+
+				$filekeys = [[DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/files/", $parsed[FILE_NAME],     "/OC_DEFAULT_MODULE/fileKey"],
+				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/",       $parsed[FILE_NAME],     "/fileKey"],
+				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/".$trashbin."/keyfiles/",   $parsed[FILE_NAME],     ".key"],
+				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keyfiles/",                    $parsed[FILE_NAME],     ".key"],
+				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keyfiles/",                    $parsed[FILE_NAME_RAW], ".key.d".$parsed[FILE_TRASHBIN_TIME]],
+				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keys/",                        $parsed[FILE_NAME],     "/fileKey"]];
+
+				foreach ($filekeys as $filekey) {
+					// try default locations
+					if (is_file(normalizePath(implode("", $filekey)))) {
+						$result[] = normalizePath(implode("", $filekey));
+					}
+
+					// check if we can find a file with the encryption suffix
+					if (is_file(normalizePath($filekey[0].$filekey[1].ENCRYPTION_SUFFIX.$filekey[2]))) {
+						$result[] = normalizePath($filekey[0].$filekey[1].ENCRYPTION_SUFFIX.$filekey[2]);
+					}
+
+					// check if we can find a folder with the encryption infix
+					$filelist = recursiveScandir(dirname(normalizePath($filekey[0].$filekey[1])), false);
+					foreach ($filelist as $filename) {
+						if (1 === preg_match("@^".preg_quote(normalizePath($filekey[0].$filekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+							if (is_file(normalizePath($filename.$filekey[2]))) {
+								$result[] = normalizePath($filename.$filekey[2]);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("filekeys = ".var_export($result, true));
+		}
+
+		return $result;
+	}
+
+	// test different filename structures for the sharekey
+	function searchShareKeys($parsed, $keynames) {
+		$result = [];
+
+		if (is_array($parsed) && is_array($keynames)) {
+			if (array_key_exists(FILE_NAME,          $parsed) &&
+			    array_key_exists(FILE_NAME_RAW,      $parsed) &&
+			    array_key_exists(FILE_TRASHBIN,      $parsed) &&
+			    array_key_exists(FILE_TRASHBIN_TIME, $parsed) &&
+			    array_key_exists(FILE_USERNAME,      $parsed)) {
+				// set trashbin path
+				$trashbin = ($parsed[FILE_TRASHBIN]) ? "files_trashbin" : "";
+
+				foreach ($keynames as $keyname) {
+					$sharekeys = [[DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/files/", $parsed[FILE_NAME],     "/OC_DEFAULT_MODULE/".$keyname.".shareKey"],
+					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/",       $parsed[FILE_NAME],     "/".$keyname.".shareKey"],
+					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/".$trashbin."/share-keys/", $parsed[FILE_NAME],     ".".$keyname.".shareKey"],
+					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/share-keys/",                  $parsed[FILE_NAME],     ".".$keyname.".shareKey"],
+					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/share-keys/",                  $parsed[FILE_NAME_RAW], ".".$keyname.".shareKey.d".$parsed[FILE_TRASHBIN_TIME]],
+					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keys/",                        $parsed[FILE_NAME],     "/".$keyname.".shareKey"]];
+
+					foreach ($sharekeys as $sharekey) {
+						// try default locations
+						if (is_file(normalizePath(implode("", $sharekey)))) {
+							$result[$keyname] = normalizePath(implode("", $sharekey));
+						}
+
+						// check if we can find a file with the encryption suffix
+						if (is_file(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]))) {
+							$result[$keyname] = normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]);
+						}
+
+						// check if we can find a folder with the encryption infix
+						$filelist = recursiveScandir(dirname(normalizePath($sharekey[0].$sharekey[1])), false);
+						foreach ($filelist as $filename) {
+							if (1 === preg_match("@^".preg_quote(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+								$result[$keyname] = normalizePath($filename.$sharekey[2]);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("sharekeys = ".var_export($result, true));
+		}
+
+		return $result;
+	}
+
+	// test different filename structures for the system keys
+	function searchSystemKeys() {
+		$result = [];
+
+		$systemdirs = [normalizePath(DATADIRECTORY."/files_encryption/OC_DEFAULT_MODULE/"),
+		               normalizePath(DATADIRECTORY."/files_encryption/"),
+		               normalizePath(DATADIRECTORY."/owncloud_private_key/")];
+
+		foreach ($systemdirs as $systemdir) {
+			$filelist = recursiveScandir($systemdir, false);
+			foreach ($filelist as $filename) {
+				if (is_file($filename)) {
+					if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+						$result[] = [KEY_FILE     => $filename,
+						             KEY_ID       => $matches["keyname"],
+						             KEY_NAME     => $matches["keyname"],
+						             KEY_PASSWORD => SECRET];
+					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+						$result[] = [KEY_FILE     => $filename,
+						             KEY_ID       => "",
+						             KEY_NAME     => $matches["keyname"],
+						             KEY_PASSWORD => ""];
+					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
+						$result[] = [KEY_FILE     => $filename,
+						             KEY_ID       => "",
+						             KEY_NAME     => $matches["keyname"],
+						             KEY_PASSWORD => RECOVERY_PASSWORD];
+					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
+						$result[] = [KEY_FILE     => $filename,
+						             KEY_ID       => "",
+						             KEY_NAME     => $matches["keyname"],
+						             KEY_PASSWORD => ""];
+					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
+						$result[] = [KEY_FILE     => $filename,
+						             KEY_ID       => "",
+						             KEY_NAME     => $matches["keyname"],
+						             KEY_PASSWORD => RECOVERY_PASSWORD];
+					}
+				}
+			}
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("systemkeys = ".var_export($result, true));
+		}
+
+		return $result;
+	}
+
+	// test different filename structures for the user keys
+	function searchUserKeys() {
+		$result = [];
+
+		$filelist = recursiveScandir(DATADIRECTORY, false);
+		foreach ($filelist as $filename) {
+			if (is_dir($filename)) {
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[0-9A-Za-z\.\-\_\@]+)$@", $filename, $matches)) {
+					if (array_key_exists(strtolower($matches["username"]), USER_PASSWORDS)) {
+						$userfiles = [normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/OC_DEFAULT_MODULE/".$matches["username"].".privateKey"),
+						              normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/".$matches["username"].".privateKey"),
+						              normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/".$matches["username"].".private.key")];
+
+						foreach ($userfiles as $userfile) {
+							if (is_file($userfile)) {
+								$result[] = [KEY_FILE     => $userfile,
+								             KEY_ID       => $matches["username"],
+								             KEY_NAME     => $matches["username"],
+								             KEY_PASSWORD => USER_PASSWORDS[strtolower($matches["username"])]];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (DEBUG_MODE_VERBOSE) {
+			debug("userkeys = ".var_export($result, true));
+		}
+
+		return $result;
+	}
+
 	// shorten a string with a filler
 	function shortenString($string, $length, $filler = "...") {
 		$result = $string;
@@ -915,7 +1246,10 @@
 		$result = false;
 
 		if ((0 === strcasecmp($cipher_algo, "rc4")) && REPLACE_RC4) {
-			if (openssl_private_decrypt($encrypted_key, $intermediate, $private_key, OPENSSL_PKCS1_PADDING)) {
+			if (openssl_private_decrypt($encrypted_key,
+			                            $intermediate,
+			                            $private_key,
+			                            OPENSSL_PKCS1_PADDING)) {
 				$output = rc4($data, $intermediate);
 				$result = (false !== $output);
 				if (!$result) {
@@ -925,7 +1259,12 @@
 				debug("openssl_private_decrypt() failed: ".openssl_error_string());
 			}
 		} else {
-			$result = openssl_open($data, $output, $encrypted_key, $private_key, $cipher_algo, $iv);
+			$result = openssl_open($data,
+			                       $output,
+			                       $encrypted_key,
+			                       $private_key,
+			                       $cipher_algo,
+			                       $iv);
 			if (!$result) {
 				debug("openssl_open() failed: ".openssl_error_string());
 			}
@@ -937,7 +1276,7 @@
 	// ===== MAIN FUNCTIONS =====
 
 	// check if a file has a header and if not copy it to the target
-	function copyFile($filename, $target) {
+	function copyFile($filename, $targetname) {
 		$result = false;
 
 		// try to set file times later on
@@ -966,7 +1305,7 @@
 		}
 
 		if ($isplain) {
-			$result = copy($filename, $target);
+			$result = copy($filename, $targetname);
 
 			// try to set file times
 			if ($result && (false !== $filemtime)) {
@@ -975,7 +1314,7 @@
 					$fileatime = time();
 				}
 
-				touch($target, $filemtime, $fileatime);
+				touch($targetname, $filemtime, $fileatime);
 			}
 		}
 
@@ -989,10 +1328,10 @@
 		$meta = parseMetaData($block);
 
 		if (is_array($header) && is_array($meta)) {
-			if (array_key_exists(HEADER_CIPHER, $header) &&
+			if (array_key_exists(HEADER_CIPHER,   $header) &&
 			    array_key_exists(HEADER_ENCODING, $header) &&
-			    array_key_exists(META_ENCRYPTED, $meta) &&
-			    array_key_exists(META_IV, $meta)) {
+			    array_key_exists(META_ENCRYPTED,  $meta)   &&
+			    array_key_exists(META_IV,         $meta)) {
 				$output = openssl_decrypt($meta[META_ENCRYPTED],
 				                          $header[HEADER_CIPHER],
 				                          $secretkey,
@@ -1010,15 +1349,15 @@
 	}
 
 	// try to decrypt a file
-	function decryptFile($filename, $secretkey, $target) {
+	function decryptFile($filename, $secretkey, $targetname) {
 		$result = false;
 
 		// try to set file times later on
 		$fileatime = fileatime($filename);
 		$filemtime = filemtime($filename);
 
-		$sourcefile = fopen($filename, "r");
-		$targetfile = fopen($target,   "w");
+		$sourcefile = fopen($filename,   "r");
+		$targetfile = fopen($targetname, "w");
 		try {
 			$result = true;
 
@@ -1087,7 +1426,7 @@
 				$fileatime = time();
 			}
 
-			touch($target, $filemtime, $fileatime);
+			touch($targetname, $filemtime, $fileatime);
 		}
 
 		return $result;
@@ -1097,271 +1436,75 @@
 	function decryptFiles($targetdir, $sourcepaths = null) {
 		$result = true;
 
+		// try to find and decrypt all available private keys
 		$privatekeys = decryptPrivateKeys();
 		if (0 >= count($privatekeys)) {
 			println("WARNING: COULD NOT DECRYPT ANY PRIVATE KEY");
 		}
 
 		// collect all file sources
-		$sources = [];
-
-		// set sourcepaths to all folders in the data directory
-		if ((null === $sourcepaths) || (0 === count($sourcepaths))) {
-			$sourcepaths = recursiveScandir(DATADIRECTORY, false);
-		}
-
-		// add the sourcepaths entries as sources
-		foreach ($sourcepaths as $path) {
-			// only handle non-empty paths
-			if (0 < strlen($path)) {
-				// only add path to source if it exists
-				if (is_file($path) || is_dir($path)) {
-					$sources["\0".count($sources)] = $path;
-				} else {
-					println("WARNING: SOURCE PATH $path DOES NOT EXIST");
-				}
+		$sources = prepareSources($sourcepaths);
+		foreach ($sources as $source_name => $source_path) {
+			// normalize $source_name
+			if ("\0" === $source_name[0]) {
+				$source_name = null;
 			}
-		}
 
-		// add external storage folders as sources
-		foreach (EXTERNAL_STORAGES as $key => $value) {
-			if (is_dir($value)) {
-				$sources[$key] = $value;
-			} else {
-				println("WARNING: EXTERNAL STORAGE $value DOES NOT EXIST");
-			}
-		}
-
-		foreach ($sources as $source => $path) {
 			// get the filelist in-time
 			$filelist = null;
-			if (is_file($path)) {
-				$filelist = [$path];
+			if (is_file($source_path)) {
+				$filelist = [$source_path];
 			} else {
-				$filelist = recursiveScandir($path);
+				$filelist = recursiveScandir($source_path);
 			}
 
 			foreach ($filelist as $filename) {
-				if (is_file($filename)) {
-					debug("filename = $filename");
+				debug("filename = $filename");
 
+				if (is_file($filename)) {
 					// generate target filename
-					$target = null;
-					if ("\0" === $source[0]) {
-						$target = normalizePath($targetdir."/".substr($filename, strlen(DATADIRECTORY)));
+					$targetname = null;
+					if (null === $source_name) {
+						$targetname = normalizePath($targetdir."/".substr($filename, strlen(DATADIRECTORY)));
 					} else {
+						$foldername = "";
+						$username   = "";
+
 						// do we handle a user-specific external storage
-						if (false === strpos($source, "/")) {
-							$target = normalizePath($targetdir."/".EXTERNAL_PREFIX.$source."/".substr($filename, strlen($path)));
+						if (false === strpos($source_name, "/")) {
+							$foldername = $source_name;
 						} else {
-							$folder   = substr($source, strpos($source, "/")+1);
-							$username = substr($source, 0, strpos($source, "/"));
-							$target   = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$folder."/".substr($filename, strlen($path)));
+							$foldername = substr($source_name, strpos($source_name, "/")+1);
+							$username   = substr($source_name, 0, strpos($source_name, "/"));
 						}
+
+						$targetname = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$foldername."/".substr($filename, strlen($source_path)));
 					}
-					debug("target = $target");
+					debug("targetname = $targetname");
 
 					// only proceed if the target does not already exist
 					// or if the existing file does not have any content
-					if ((!is_file($target)) || (0 >= filesize($target))) {
-						$success = false;
-
-						$datafilename = null;
-						$istrashbin   = false;
-						$username     = null;
-
-						// do we handle the data directory or an external storage
-						if ("\0" === $source[0]) {
-							if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files/(?<datafilename>.+)$@", $filename, $matches)) {
-								$datafilename = $matches["datafilename"];
-								$istrashbin   = false;
-								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/files/(?<datafilename>.+)$@", $filename, $matches)) {
-								$datafilename = $matches["datafilename"];
-								$istrashbin   = true;
-								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
-								$datafilename = $matches["datafilename"];
-								$istrashbin   = false;
-								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+(?<deletetime>\.d[0-9]+)$@", $filename, $matches)) {
-								$datafilename = $matches["datafilename"].$matches["deletetime"];
-								$istrashbin   = true;
-								$username     = $matches["username"];
-							} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[^/]+)/files_trashbin/versions/(?<datafilename>.+)\.v[0-9]+$@", $filename, $matches)) {
-								$datafilename = $matches["datafilename"];
-								$istrashbin   = true;
-								$username     = $matches["username"];
-							}
-						} else {
-							// do we handle a user-specific external storage
-							if (false === strpos($source, "/")) {
-								$datafilename = normalizePath($source."/".substr($filename, strlen($path)));
-								$istrashbin   = false;
-								$username     = "";
-							} else {
-								$folder       = substr($source, strpos($source, "/")+1);
-								$datafilename = normalizePath($folder."/".substr($filename, strlen($path)));
-								$istrashbin   = false;
-								$username     = substr($source, 0, strpos($source, "/"));
-							}
-						}
-
-						// do we know how to handle this specific file path
-						if (null !== $datafilename) {
-							debug("datafilename = $datafilename");
-							debug("istrashbin = ".($istrashbin ? "true" : "false"));
-							debug("username = $username");
-
-							// preset variables
-							$filekeyname  = null;
-							$keyfolder1   = null;
-							$keyfolder2   = null;
-							$keyfolder3   = null;
-							$keyfolder4   = null;
-							$secretkey    = null;
-							$sharekeyname = null;
-							$subfolder    = null;
-
-							if ($istrashbin) {
-								$subfolder = "files_trashbin/files";
-							} else {
-								$subfolder = "files";
-							}
-
-							// prepare the key folder for later use
-							$keyfolder1 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/");
-							$keyfolder2 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/keys/".$subfolder."/../");
-							$keyfolder3 = normalizePath(DATADIRECTORY."/".$username."/files_encryption/".$subfolder."/../");
-							$keyfolder4 = normalizePath(DATADIRECTORY."/".$username."/".$subfolder."/../");
-
-							// try to identify the filekey
-							$filekeyname = normalizePath($keyfolder1."/".$datafilename."/OC_DEFAULT_MODULE/fileKey");
-							if (!is_file($filekeyname)) {
-								$filekeyname = normalizePath($keyfolder2."/".$datafilename."/fileKey");
-							}
-							if (!is_file($filekeyname)) {
-								$filekeyname = normalizePath($keyfolder3."/keyfiles/".$datafilename.".key");
-							}
-							if (!is_file($filekeyname)) {
-								$filekeyname = normalizePath($keyfolder4."/keyfiles/".$datafilename.".key");
-							}
-							if (!is_file($filekeyname)) {
-								if (1 === preg_match("@^(?<filename>.+)\.(?<deletetime>d[0-9]+)$@", $datafilename, $matches)) {
-									$filekeyname = normalizePath($keyfolder4."/keyfiles/".$matches["filename"].".key.".$matches["deletetime"]);
-								}
-							}
-							if (!is_file($filekeyname)) {
-								$filekeyname = normalizePath($keyfolder4."/keys/".$datafilename."/fileKey");
-							}
-							if (!is_file($filekeyname)) {
-								// check if we can find a folder with the encryption infix
-								$keylist = recursiveScandir(dirname(normalizePath($keyfolder1."/".$datafilename)), false);
-								foreach ($keylist as $keyitem) {
-									if (1 === preg_match("@^".preg_quote(normalizePath($keyfolder1."/".$datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
-										// set the alternative filekey name
-										$filekeyname = normalizePath($keyitem."/OC_DEFAULT_MODULE/fileKey");
-
-										// proceed with the decryption attempt
-										if (is_file($filekeyname)) {
-											break;
-										}
-									}
-								}
-							}
-							debug("filekeyname = ".(is_file($filekeyname) ? $filekeyname : "unavailable"));
-
-							// try to identify the sharekey
-							foreach ($privatekeys as $key => $value) {
-								$sharekeyname = normalizePath($keyfolder1."/".$datafilename."/OC_DEFAULT_MODULE/".$key.".shareKey");
-								if (!is_file($sharekeyname)) {
-									$sharekeyname = normalizePath($keyfolder2."/".$datafilename."/".$key.".shareKey");
-								}
-								if (!is_file($sharekeyname)) {
-									$sharekeyname = normalizePath($keyfolder3."/share-keys/".$datafilename.".".$key.".shareKey");
-								}
-								if (!is_file($sharekeyname)) {
-									$sharekeyname = normalizePath($keyfolder4."/share-keys/".$datafilename.".".$key.".shareKey");
-								}
-								if (!is_file($sharekeyname)) {
-									if (1 === preg_match("@^(?<filename>.+)\.(?<deletetime>d[0-9]+)$@", $datafilename, $matches)) {
-										$sharekeyname = normalizePath($keyfolder4."/share-keys/".$matches["filename"].".".$key.".shareKey.".$matches["deletetime"]);
-									}
-								}
-								if (!is_file($sharekeyname)) {
-									$sharekeyname = normalizePath($keyfolder4."/keys/".$datafilename."/".$key.".shareKey");
-								}
-								if (!is_file($sharekeyname)) {
-									// check if we can find a folder with the encryption infix
-									$keylist = recursiveScandir(dirname(normalizePath($keyfolder1."/".$datafilename)), false);
-									foreach ($keylist as $keyitem) {
-										if (1 === preg_match("@^".preg_quote(normalizePath($keyfolder1."/".$datafilename.ENCRYPTION_INFIX), "@")."[0-9]+$@", $keyitem, $matches)) {
-											// set the alternative sharekey name
-											$sharekeyname = normalizePath($keyitem."/OC_DEFAULT_MODULE/".$key.".shareKey");
-
-											// proceed with the decryption attempt
-											if (is_file($sharekeyname)) {
-												break;
-											}
-										}
-									}
-								}
-								debug("sharekeyname = ".(is_file($sharekeyname) ? $sharekeyname : "unavailable"));
-
-								if (is_file($sharekeyname)) {
-									// try to decrypt legacy file key first
-									if (is_file($filekeyname)) {
-										$filekey  = file_get_contents_try_json($filekeyname);
-										$sharekey = file_get_contents_try_json($sharekeyname);
-										if ((false !== $filekey) && (false !== $sharekey)) {
-											if (wrapped_openssl_open($filekey,
-											                         $tmpkey,
-											                         $sharekey,
-											                         $privatekeys[$key],
-											                         "rc4")) {
-												$secretkey = $tmpkey;
-												break;
-											} else {
-												debug("secretkey could not be decrypted from legacy file key...");
-											}
-										} else {
-											debug("filekey or sharekey could not be read from file...");
-										}
-									}
-
-									// try to decrypt the new share key second,
-									// we also do this when there is a file key in case it is a leftover
-									if (null === $secretkey) {
-										$sharekey = file_get_contents_try_json($sharekeyname);
-										if (false !== $sharekey) {
-											if (openssl_private_decrypt($sharekey,
-											                            $tmpkey,
-											                            $privatekeys[$key],
-											                            OPENSSL_PKCS1_OAEP_PADDING)) {
-												$secretkey = $tmpkey;
-												break;
-											} else {
-												debug("openssl_private_decrypt() failed: ".openssl_error_string());
-												debug("secretkey could not be decrypted...");
-											}
-										} else {
-											debug("sharekey could not be read from file...");
-										}
-									}
-								}
-							}
-							debug("secretkey = ".((null !== $secretkey) ? "available" : "unavailable"));
+					if ((!is_file($targetname)) || (0 >= filesize($targetname))) {
+						// retrieve filename elements
+						$parsed = parseFilename($filename, $source_name, $source_path);
+						if (0 < count($parsed)) {
+							// we haven't succeeded yet
+							$success = false;
 
 							// try to recursively create the target subfolder
-							if (!is_dir(dirname($target))) {
-								mkdir(dirname($target), 0777, true);
+							if (!is_dir(dirname($targetname))) {
+								mkdir(dirname($targetname), 0777, true);
 							}
+
+							// try to find and decrypt the fitting secret key
+							$secretkey = decryptSecretKey($parsed, $privatekeys);
+							debug("secretkey = ".((null !== $secretkey) ? "available" : "unavailable"));
 
 							// if the file provides all relevant key material then we try to decrypt it
 							if (null !== $secretkey) {
 								debug("trying to decrypt file...");
 
-								$success = decryptFile($filename, $secretkey, $target);
+								$success = decryptFile($filename, $secretkey, $targetname);
 							} else {
 								debug("cannot decrypt this file...");
 							}
@@ -1371,31 +1514,34 @@
 							// but we copy it only if it does not contain an encryption header and only
 							// if the decryption hasn't created a file already or if the created file
 							// does not have any content
-							if ((!$success) && ((!is_file($target)) || (0 >= filesize($target)))) {
+							if ((!$success) && ((!is_file($targetname)) || (0 >= filesize($targetname)))) {
 								debug("trying to copy file...");
 
-								$success = copyFile($filename, $target);
+								$success = copyFile($filename, $targetname);
 							}
-							debug("success = ".($success ? "true" : "false"));
 
+							debug("success = ".($success ? "true" : "false"));
 							if ($success) {
 								println("DONE: $filename");
 							} else {
 								// we failed but created a file,
 								// discard the broken file
-								if (is_file($target)) {
-									unlink($target);
+								if (is_file($targetname)) {
+									unlink($targetname);
 								}
-
 								println("ERROR: $filename FAILED");
-								$result = false;
 							}
+
+							// update result
+							$result = ($result && $success);
 						} else {
-							debug("skipping this file because filename structure is not unknown...");
+							debug("skipping this file because the filename structure is not unknown...");
 						}
 					} else {
-						println("SKIP: $target ALREADY EXISTS");
+						println("SKIP: $targetname ALREADY EXISTS");
 					}
+				} else {
+					debug("skipping this item because it is not a file...");
 				}
 			}
 		}
