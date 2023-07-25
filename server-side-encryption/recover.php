@@ -316,8 +316,8 @@
 				break;
 
 			case "EXTERNAL_STORAGES":
-				foreach ($value as $key => $entry) {
-					$value[$entry] = normalizePath($entry);
+				foreach ($value as $name => $path) {
+					$value[$name] = normalizePath($path);
 				}
 				break;
 
@@ -329,6 +329,22 @@
 		if (!defined($key)) {
 			define($key, $value);
 		}
+	}
+
+	// concatenate path pieces fixing leading and trailing slashes
+	function concatPath($directory, $file) {
+		// removing trailing slashes from $directory
+		while ((0 < strlen($directory)) && ("/" === $directory[strlen($directory)-1])) {
+			$directory = substr($directory, 0, -1);
+		}
+
+		// removing leading slashes from $file
+		while ((0 < strlen($file)) && ("/" === $file[0])) {
+			$file = substr($file, 1);
+		}
+
+		// concat $directory and $file with a slash
+		return $directory."/".$file;
 	}
 
 	// print messages only if the debug mode is active
@@ -743,7 +759,8 @@
 			}
 
 			$result = [FILE_FILE          => $filename,
-			           FILE_NAME          => $foldername."/".substr($filename, strlen($source_path)),
+			           FILE_NAME          => concatPath($foldername, substr($filename, strlen($source_path))),
+			           FILE_NAME_RAW      => concatPath($foldername, substr($filename, strlen($source_path))),
 			           FILE_TRASHBIN      => false,
 			           FILE_TRASHBIN_TIME => "",
 			           FILE_USERNAME      => $username,

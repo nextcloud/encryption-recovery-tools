@@ -4,6 +4,7 @@ include_once(__DIR__."/main.php");
 
 final class nextcloud23 extends main
 {
+	const EXTERNAL_STORAGES = [];
 	const INSTANCEID        = "oc0hyclfwl79";
 	const RECOVERY_PASSWORD = "recovery";
 	const SECRET            = "bSLk3nFQN8Xl8eOJr3bguXRqGw3AzbN/RsoAPhenVZVQezBa";

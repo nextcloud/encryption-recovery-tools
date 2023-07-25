@@ -10,6 +10,7 @@ include_once(__DIR__."/main.php");
 
 final class <classname> extends main
 {
+	const EXTERNAL_STORAGES = [];
 	const INSTANCEID        = "";
 	const RECOVERY_PASSWORD = "recovery";
 	const SECRET            = "";
@@ -105,6 +106,7 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/test/");
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
 			putenv("INSTANCEID=".        static::INSTANCEID);
 			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
 			putenv("SECRET=".            static::SECRET);
@@ -135,6 +137,7 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/master/");
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
 			putenv("INSTANCEID=".        static::INSTANCEID);
 			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
 			putenv("SECRET=".            static::SECRET);
@@ -165,6 +168,7 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/pubshare/");
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
 			putenv("INSTANCEID=".        static::INSTANCEID);
 			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
 			putenv("SECRET=".            static::SECRET);
@@ -195,6 +199,7 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/recovery/");
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
 			putenv("INSTANCEID=".        static::INSTANCEID);
 			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
 			putenv("SECRET=".            static::SECRET);
@@ -225,6 +230,7 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DATADIRECTORY=".     __DIR__."/../../data/server-side-encryption/".static::VERSION."/user/");
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
 			putenv("INSTANCEID=".        static::INSTANCEID);
 			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
 			putenv("SECRET=".            static::SECRET);
