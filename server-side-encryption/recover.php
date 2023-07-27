@@ -17,14 +17,12 @@
 	# description:
 	# ============
 	#
-	# This script can save your precious files in cases where you encrypted them with
-	# the Nextcloud Server Side Encryption and still have access to the data
-	# directory and the Nextcloud Server Side Encryption and still have access to the
-	# data directory and the Nextcloud configuration file (`config/config.php`). This
-	# script is able to decrypt locally stored files within the data directory. It
-	# supports master-key encrypted files, user-key encrypted files and can also use
-	# a rescue key (if enabled) and the public sharing key if files had been publicly
-	# shared.
+	# This script can recover your precious files if you encrypted them with the
+	# Nextcloud Server Side Encryption and still have access to the data directory
+	# and the Nextcloud configuration file (config/config.php). It supports the
+	# master-key encryption, the user-key encryption and can even use the rescue key
+	# if it had been enabled as well as the public sharing key for files that had been
+	# publicly shared.
 	#
 	#
 	# configuration:
