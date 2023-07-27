@@ -33,8 +33,18 @@ final class printHelp extends PHPUnit\Framework\TestCase
 
 		include(__DIR__."/../../../server-side-encryption/recover.php");
 
-		self::expectOutputString(self::get_help_text());
+		// check if the output is as expected
+		ob_start();
 		printHelp();
+		$result = ob_get_contents();
+		self::assertSame(self::get_help_text(), $result);
+		ob_end_clean();
+
+		// check if each line has max. 80 characters
+		$result = explode(PHP_EOL, $result);
+		foreach ($result as $line) {
+			self::assertLessThanOrEqual(80, strlen($line));
+		}
 	}
 
 	public function test_no_args() {
@@ -42,8 +52,18 @@ final class printHelp extends PHPUnit\Framework\TestCase
 
 		include(__DIR__."/../../../server-side-encryption/recover.php");
 
-		self::expectOutputString(self::get_help_text());
-		main([__FILE__]);
+		// check if the output is as expected
+		ob_start();
+		self::assertSame(0, main([__FILE__]));
+		$result = ob_get_contents();
+		self::assertSame(self::get_help_text(), $result);
+		ob_end_clean();
+
+		// check if each line has max. 80 characters
+		$result = explode(PHP_EOL, $result);
+		foreach ($result as $line) {
+			self::assertLessThanOrEqual(80, strlen($line));
+		}
 	}
 
 	public function test_h_arg() {
@@ -51,8 +71,18 @@ final class printHelp extends PHPUnit\Framework\TestCase
 
 		include(__DIR__."/../../../server-side-encryption/recover.php");
 
-		self::expectOutputString(self::get_help_text());
-		main([__FILE__, "-h"]);
+		// check if the output is as expected
+		ob_start();
+		self::assertSame(0, main([__FILE__, "-h"]));
+		$result = ob_get_contents();
+		self::assertSame(self::get_help_text(), $result);
+		ob_end_clean();
+
+		// check if each line has max. 80 characters
+		$result = explode(PHP_EOL, $result);
+		foreach ($result as $line) {
+			self::assertLessThanOrEqual(80, strlen($line));
+		}
 	}
 
 	public function test_help_arg() {
@@ -60,7 +90,17 @@ final class printHelp extends PHPUnit\Framework\TestCase
 
 		include(__DIR__."/../../../server-side-encryption/recover.php");
 
-		self::expectOutputString(self::get_help_text());
-		main([__FILE__, "--help"]);
+		// check if the output is as expected
+		ob_start();
+		self::assertSame(0, main([__FILE__, "--help"]));
+		$result = ob_get_contents();
+		self::assertSame(self::get_help_text(), $result);
+		ob_end_clean();
+
+		// check if each line has max. 80 characters
+		$result = explode(PHP_EOL, $result);
+		foreach ($result as $line) {
+			self::assertLessThanOrEqual(80, strlen($line));
+		}
 	}
 }
