@@ -18,7 +18,7 @@
 	# ============
 	#
 	# This script can recover your precious files if you encrypted them with the
-	# Nextcloud Server Side Encryption and still have access to the data directory
+	# Nextcloud Server-Side Encryption and still have access to the data directory
 	# and the Nextcloud configuration file (config/config.php). It supports the
 	# master-key encryption, the user-key encryption and can even use the rescue key
 	# if it had been enabled as well as the public sharing key for files that had been
@@ -349,6 +349,21 @@
 	function debug($string) {
 		if (DEBUG_MODE) {
 			println("DEBUG: $string");
+		}
+	}
+
+	// print the configuration to the verbose debug log
+	function debugConfig() {
+		if (DEBUG_MODE_VERBOSE) {
+			debug("DATADIRECTORY = ".var_export(DATADIRECTORY, true));
+			debug("DEBUG_MODE = ".var_export(DEBUG_MODE, true));
+			debug("DEBUG_MODE_VERBOSE = ".var_export(DEBUG_MODE_VERBOSE, true));
+			debug("EXTERNAL_STORAGES = ".var_export(EXTERNAL_STORAGES, true));
+			debug("INSTANCEID = ".var_export(INSTANCEID, true));
+			debug("RECOVERY_PASSWORD = ".var_export(RECOVERY_PASSWORD, true));
+			debug("SECRET = ".var_export(SECRET, true));
+			debug("SUPPORT_MISSING_HEADERS = ".var_export(SUPPORT_MISSING_HEADERS, true));
+			debug("USER_PASSWORDS = ".var_export(USER_PASSWORDS, true));
 		}
 	}
 
@@ -880,11 +895,11 @@
 	function prepareConfig() {
 		// nextcloud definitions
 		config("DATADIRECTORY", getcwd());
-		config("INSTANCEID",    null);
-		config("SECRET",        null);
+		config("INSTANCEID",    "");
+		config("SECRET",        "");
 
 		// recovery password definition
-		config("RECOVERY_PASSWORD", null);
+		config("RECOVERY_PASSWORD", "");
 
 		// user password definition
 		config("USER_PASSWORDS", []);
@@ -1590,6 +1605,7 @@
 				prepareConfig();
 
 				debug("debug mode enabled");
+				debugConfig();
 
 				// we want to work with an empty stat cache
 				clearstatcache(true);
