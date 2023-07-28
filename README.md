@@ -4,7 +4,7 @@
 
 ### Description
 
-The script located at `./server-side-encryption/recover.php` can recover your precious files if you encrypted them with the **Nextcloud Server Side Encryption** and still have access to the data directory and the Nextcloud configuration file (`config/config.php`).
+The script located at `./server-side-encryption/recover.php` can recover your precious files if you encrypted them with the **Nextcloud Server-Side Encryption** and still have access to the data directory and the Nextcloud configuration file (`config/config.php`).
 It supports the master-key encryption, the user-key encryption and can even use the rescue key if it had been enabled as well as the public sharing key for files that had been publicly shared.
 
 ### Configuration
