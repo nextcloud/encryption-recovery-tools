@@ -39,7 +39,7 @@ if [[ -d ./tests/data/server-side-encryption ]]
 then
   git -C ./tests/data/server-side-encryption pull >/dev/null 2>&1
 else
-  git clone https://github.com/yahesh/server-side-encryption-testdata ./tests/data/server-side-encryption >/dev/null 2>&1
+  git clone https://github.com/nextcloud/server-side-encryption-testdata ./tests/data/server-side-encryption >/dev/null 2>&1
 fi
 if [[ "$?" -ne "0" ]]
 then
