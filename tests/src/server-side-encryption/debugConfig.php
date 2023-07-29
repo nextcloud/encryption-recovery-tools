@@ -7,9 +7,14 @@ final class debugConfig extends PHPUnit\Framework\TestCase
 		       "DEBUG: DEBUG_MODE_VERBOSE = true".PHP_EOL.
 		       "DEBUG: EXTERNAL_STORAGES = array (".PHP_EOL.
 		       ")".PHP_EOL.
-		       "DEBUG: INSTANCEID = ''".PHP_EOL.
-		       "DEBUG: RECOVERY_PASSWORD = ''".PHP_EOL.
-		       "DEBUG: SECRET = ''".PHP_EOL.
+		       "DEBUG: INSTANCEID = array (".PHP_EOL.
+		       "  0 => '',".PHP_EOL.
+		       ")".PHP_EOL.
+		       "DEBUG: RECOVERY_PASSWORD = array (".PHP_EOL.
+		       ")".PHP_EOL.
+		       "DEBUG: SECRET = array (".PHP_EOL.
+		       "  0 => '',".PHP_EOL.
+		       ")".PHP_EOL.
 		       "DEBUG: SUPPORT_MISSING_HEADERS = false".PHP_EOL.
 		       "DEBUG: USER_PASSWORDS = array (".PHP_EOL.
 		       ")".PHP_EOL;
