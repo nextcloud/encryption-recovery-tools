@@ -199,7 +199,8 @@
 	                          "AES-256-CFB" => 32,
 	                          "AES-128-CFB" => 16]);
 
-	// filename parts used by encryption:encrypt-all
+	// filename parts used by encryption:decrypt-all and encryption:encrypt-all
+	config("DECRYPTION_INFIX",  ".decrypted.");
 	config("ENCRYPTION_INFIX",  ".encrypted.");
 	config("ENCRYPTION_SUFFIX", ".part");
 
@@ -538,47 +539,54 @@
 		$filekeys  = searchFileKeys($parsed);
 		$sharekeys = searchShareKeys($parsed, array_keys($privatekeys));
 
-		foreach ($sharekeys as $keyname => $sharekeyname) {
-			$sharekey = file_get_contents_try_json($sharekeyname);
-			if (false !== $sharekey) {
-				// try to decrypt legacy file key first
-				foreach ($filekeys as $filekeyname) {
-					$filekey = file_get_contents_try_json($filekeyname);
-					if (false !== $filekey) {
-						if (wrapped_openssl_open($filekey,
-						                         $tmpkey,
-						                         $sharekey,
-						                         $privatekeys[$keyname],
-						                         "rc4")) {
+		foreach ($sharekeys as $keyname => $sharekeynames) {
+			foreach ($sharekeynames as $sharekeyname) {
+				$sharekey = file_get_contents_try_json($sharekeyname);
+				if (false !== $sharekey) {
+					// try to decrypt legacy file key first
+					foreach ($filekeys as $filekeyname) {
+						$filekey = file_get_contents_try_json($filekeyname);
+						if (false !== $filekey) {
+							if (wrapped_openssl_open($filekey,
+							                         $tmpkey,
+							                         $sharekey,
+							                         $privatekeys[$keyname],
+							                         "rc4")) {
+								$result = $tmpkey;
+							} else {
+								debug("secretkey could not be decrypted from legacy file key...");
+							}
+						} else {
+							debug("filekey could not be read from file...");
+						}
+
+						// exit the loop
+						if (null !== $result) {
+							break;
+						}
+					}
+
+					// try to decrypt the new share key second,
+					// we also do this when there is a file key in case it is a leftover
+					if (null === $result) {
+						if (openssl_private_decrypt($sharekey,
+						                            $tmpkey,
+						                            $privatekeys[$keyname],
+						                            OPENSSL_PKCS1_OAEP_PADDING)) {
 							$result = $tmpkey;
 						} else {
-							debug("secretkey could not be decrypted from legacy file key...");
+							debug("openssl_private_decrypt() failed: ".openssl_error_string());
+							debug("secretkey could not be decrypted...");
 						}
-					} else {
-						debug("filekey could not be read from file...");
 					}
-
-					// exit the loop
-					if (null !== $result) {
-						break;
-					}
+				} else {
+					debug("sharekey could not be read from file...");
 				}
 
-				// try to decrypt the new share key second,
-				// we also do this when there is a file key in case it is a leftover
-				if (null === $result) {
-					if (openssl_private_decrypt($sharekey,
-					                            $tmpkey,
-					                            $privatekeys[$keyname],
-					                            OPENSSL_PKCS1_OAEP_PADDING)) {
-						$result = $tmpkey;
-					} else {
-						debug("openssl_private_decrypt() failed: ".openssl_error_string());
-						debug("secretkey could not be decrypted...");
-					}
+				// exit the loop
+				if (null !== $result) {
+					break;
 				}
-			} else {
-				debug("sharekey could not be read from file...");
 			}
 
 			// exit the loop
@@ -1110,10 +1118,14 @@
 						$result[] = normalizePath($filekey[0].$filekey[1].ENCRYPTION_SUFFIX.$filekey[2]);
 					}
 
-					// check if we can find a folder with the encryption infix
+					// check if we can find a folder with the decryption or encryption infix
 					$filelist = recursiveScandir(dirname(normalizePath($filekey[0].$filekey[1])), false);
 					foreach ($filelist as $filename) {
-						if (1 === preg_match("@^".preg_quote(normalizePath($filekey[0].$filekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+						if (1 === preg_match("@^".preg_quote(normalizePath($filekey[0].$filekey[1].DECRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+							if (is_file(normalizePath($filename.$filekey[2]))) {
+								$result[] = normalizePath($filename.$filekey[2]);
+							}
+						} elseif (1 === preg_match("@^".preg_quote(normalizePath($filekey[0].$filekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
 							if (is_file(normalizePath($filename.$filekey[2]))) {
 								$result[] = normalizePath($filename.$filekey[2]);
 							}
@@ -1144,6 +1156,9 @@
 				$trashbin = ($parsed[FILE_TRASHBIN]) ? "files_trashbin" : "";
 
 				foreach ($keynames as $keyname) {
+					// prepare result
+					$result[$keyname] = [];
+
 					$sharekeys = [[DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/files/", $parsed[FILE_NAME],     "/OC_DEFAULT_MODULE/".$keyname.".shareKey"],
 					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/",       $parsed[FILE_NAME],     "/".$keyname.".shareKey"],
 					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/".$trashbin."/share-keys/", $parsed[FILE_NAME],     ".".$keyname.".shareKey"],
@@ -1154,19 +1169,25 @@
 					foreach ($sharekeys as $sharekey) {
 						// try default locations
 						if (is_file(normalizePath(implode("", $sharekey)))) {
-							$result[$keyname] = normalizePath(implode("", $sharekey));
+							$result[$keyname][] = normalizePath(implode("", $sharekey));
 						}
 
 						// check if we can find a file with the encryption suffix
 						if (is_file(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]))) {
-							$result[$keyname] = normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]);
+							$result[$keyname][] = normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]);
 						}
 
-						// check if we can find a folder with the encryption infix
+						// check if we can find a folder with the decryption or encryption infix
 						$filelist = recursiveScandir(dirname(normalizePath($sharekey[0].$sharekey[1])), false);
 						foreach ($filelist as $filename) {
-							if (1 === preg_match("@^".preg_quote(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
-								$result[$keyname] = normalizePath($filename.$sharekey[2]);
+							if (1 === preg_match("@^".preg_quote(normalizePath($sharekey[0].$sharekey[1].DECRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+								if (is_file(normalizePath($filename.$sharekey[2]))) {
+									$result[$keyname][] = normalizePath($filename.$sharekey[2]);
+								}
+							} elseif (1 === preg_match("@^".preg_quote(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
+								if (is_file(normalizePath($filename.$sharekey[2]))) {
+									$result[$keyname][] = normalizePath($filename.$sharekey[2]);
+								}
 							}
 						}
 					}
