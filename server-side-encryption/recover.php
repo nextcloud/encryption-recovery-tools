@@ -448,9 +448,6 @@
 			    array_key_exists(HEADER_KEYFORMAT, $header) &&
 			    array_key_exists(META_ENCRYPTED,   $meta)   &&
 			    array_key_exists(META_IV,          $meta)) {
-				// set default secret key
-				$secretkey = $password;
-
 				// check if we need to generate the password hash
 				$iterations = 0;
 				switch ($header[HEADER_KEYFORMAT]) {
@@ -469,23 +466,28 @@
 					// required before PHP 8.2
 					$salt = hash("sha256", $keyid.INSTANCEID.SECRET, true);
 					if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
-						$secretkey = hash_pbkdf2("sha256",
-						                         $secretkey,
-						                         $salt,
-						                         $iterations,
-						                         CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
-						                         true);
+						$password = hash_pbkdf2("sha256",
+						                        $password,
+						                        $salt,
+						                        $iterations,
+						                        CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
+						                        true);
 					}
 
 					// usable starting with PHP 8.2
 					// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
-					// 	$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, $iterations, openssl_cipher_key_length($header[HEADER_CIPHER]), true);
+					// 	$password = hash_pbkdf2("sha256",
+					// 	                        $password,
+					// 	                        $salt,
+					// 	                        $iterations,
+					// 	                        openssl_cipher_key_length($header[HEADER_CIPHER]),
+					// 	                        true);
 					// }
 				}
 
 				$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
 				                              $header[HEADER_CIPHER],
-				                              $secretkey,
+				                              $password,
 				                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
 				                              $meta[META_IV]);
 				if (false !== $privatekey) {
@@ -495,6 +497,8 @@
 						if (array_key_exists("key", $sslInfo)) {
 							$result = $privatekey;
 						}
+					} else {
+						debug("decrypted content is not a privatekey");
 					}
 				} else {
 					debug("privatekey could not be decrypted: ".openssl_error_string());
