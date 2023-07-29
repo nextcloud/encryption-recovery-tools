@@ -87,6 +87,18 @@ class main extends PHPUnit\Framework\TestCase
 		return $directory."/".$file;
 	}
 
+	protected static function wrong_passwords($user_passwords) {
+		$result = "";
+
+		if (is_array($user_passwords)) {
+			foreach ($user_passwords as $key => $value) {
+				$result .= "$key=wrongpassword ";
+			}
+		}
+
+		return trim($result);
+	}
+
 	protected function setUp() : void {
 		static::clear_dir(__DIR__."/../../tmp/");
 	}
@@ -107,10 +119,10 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
 			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
-			putenv("INSTANCEID=".        static::INSTANCEID);
-			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
-			putenv("SECRET=".            static::SECRET);
-			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
+			putenv("INSTANCEID=".        "wrongid ".static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". "wrongpassword ".static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            "wrongsecret ".static::SECRET);
+			putenv("USER_PASSWORDS=".    static::wrong_passwords(static::USER_PASSWORDS)." ".static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
@@ -138,10 +150,10 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
 			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
-			putenv("INSTANCEID=".        static::INSTANCEID);
-			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
-			putenv("SECRET=".            static::SECRET);
-			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
+			putenv("INSTANCEID=".        "wrongid ".static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". "wrongpassword ".static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            "wrongsecret ".static::SECRET);
+			putenv("USER_PASSWORDS=".    static::wrong_passwords(static::USER_PASSWORDS)." ".static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
@@ -169,10 +181,10 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
 			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
-			putenv("INSTANCEID=".        static::INSTANCEID);
-			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
-			putenv("SECRET=".            static::SECRET);
-			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
+			putenv("INSTANCEID=".        "wrongid ".static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". "wrongpassword ".static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            "wrongsecret ".static::SECRET);
+			putenv("USER_PASSWORDS=".    static::wrong_passwords(static::USER_PASSWORDS)." ".static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
@@ -200,10 +212,10 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
 			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
-			putenv("INSTANCEID=".        static::INSTANCEID);
-			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
-			putenv("SECRET=".            static::SECRET);
-			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
+			putenv("INSTANCEID=".        "wrongid ".static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". "wrongpassword ".static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            "wrongsecret ".static::SECRET);
+			putenv("USER_PASSWORDS=".    static::wrong_passwords(static::USER_PASSWORDS)." ".static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 
@@ -231,10 +243,10 @@ class main extends PHPUnit\Framework\TestCase
 			putenv("DEBUG_MODE=".        "true");
 			putenv("DEBUG_MODE_VERBOSE="."true");
 			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
-			putenv("INSTANCEID=".        static::INSTANCEID);
-			putenv("RECOVERY_PASSWORD=". static::RECOVERY_PASSWORD);
-			putenv("SECRET=".            static::SECRET);
-			putenv("USER_PASSWORDS=".    static::array_to_env(static::USER_PASSWORDS));
+			putenv("INSTANCEID=".        "wrongid ".static::INSTANCEID);
+			putenv("RECOVERY_PASSWORD=". "wrongpassword ".static::RECOVERY_PASSWORD);
+			putenv("SECRET=".            "wrongsecret ".static::SECRET);
+			putenv("USER_PASSWORDS=".    static::wrong_passwords(static::USER_PASSWORDS)." ".static::array_to_env(static::USER_PASSWORDS));
 
 			include(__DIR__."/../../../server-side-encryption/recover.php");
 

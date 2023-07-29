@@ -38,17 +38,23 @@
 	#
 	# INSTANCEID              this is a value from the Nextcloud configuration file,
 	# (REQUIRED)              there does not seem to be another way to retrieve this
-	#                         value
+	#                         value, you can provide an array of values if you are
+	#                         uncertain which value is correct and all of them will
+	#                         be tried out
 	#
 	# SECRET                  this is a value from the Nextcloud configuration file,
 	# (REQUIRED)              there does not seem to be another way to retrieve this
-	#                         value
+	#                         value, you can provide an array of values if you are
+	#                         uncertain which value is correct and all of them will
+	#                         be tried out
 	#
 	# RECOVERY_PASSWORD       this is the password for the recovery key, you can set
 	# (OPTIONAL)              this value if you activated the recovery feature of your
 	#                         Nextcloud instance, leave this value empty if you did
 	#                         not acticate the recovery feature of your Nextcloud
-	#                         instance
+	#                         instance, you can provide an array of values if you are
+	#                         uncertain which value is correct and all of them will
+	#                         be tried out
 	#
 	# USER_PASSWORDS          these are the passwords for the user keys, you have to
 	# (OPTIONAL)              set these values if you disabled the master key
@@ -56,7 +62,9 @@
 	#                         to set these values if you did not disable the master
 	#                         key encryption of your Nextcloud instance, each value
 	#                         represents a (username, password) pair and you can set
-	#                         as many pairs as necessary
+	#                         as many pairs as necessary, you can provide an array of
+	#                         passwords per user if you are uncertain which password
+	#                         is correct and all of them will be tried out
 	#
 	#                         Example: if the username was "beispiel" and the password
 	#                                  of that user was "example" then the value has
@@ -115,6 +123,19 @@
 	#          variable then the corresponding value has to be set as:
 	#
 	#          USER_PASSWORDS="user1=password1 user2=password2"
+	#
+	# It is possible to provide more than on password per user through USER_PASSWORDS
+	# in case you have several passwords and do not know which of them is correct.
+	# All of them will be tried out.
+	#
+	# Example: if two passwords for the same user shall be provided through an
+	#          environment variable then the corresponding value has to be set as:
+	#
+	#          USER_PASSWORDS="user=password1 user=password2"
+	#
+	# The values INSTANCEID, RECOVERY_PASSWORD and SECRET are handled as
+	# space-separated lists in case you have several values and do not know which of
+	# them is correct. All of them will be tried out.
 	#
 	#
 	# execution:
@@ -239,11 +260,11 @@
 	config("HEADER_VALUE_FALSE",                  "false");
 	config("HEADER_VALUE_TRUE",                   "true");
 
-	// key entries
-	config("KEY_FILE",     "file");
-	config("KEY_ID",       "id");
-	config("KEY_NAME",     "name");
-	config("KEY_PASSWORD", "password");
+	// key entrie s
+	config("KEY_FILE",      "file");
+	config("KEY_ID",        "id");
+	config("KEY_NAME",      "name");
+	config("KEY_PASSWORDS", "passwords");
 
 	// meta entries
 	config("META_ENCRYPTED", "encrypted");
@@ -276,56 +297,93 @@
 
 	// only define a constant if it does not exist
 	function config($key, $value) {
-		// overwrite config with environment variable if it is set
-		if (getenv($key)) {
-			// handle specific environment variables differently
-			switch ($key) {
-				// handle as arrays
-				case "CIPHER_SUPPORT":
-				case "EXTERNAL_STORAGES":
-				case "USER_PASSWORDS":
-					$value   = [];
-					$entries = explode(" ", getenv($key));
-					foreach ($entries as $entry) {
-						if (false !== strpos($entry, "=")) {
-							$left         = substr($entry, 0, strpos($entry, "="));
-							$right        = substr($entry, strpos($entry, "=")+1);
-							$value[$left] = $right;
+		if (!defined($key)) {
+			// overwrite config with environment variable if it is set
+			if (getenv($key)) {
+				// handle specific environment variables differently
+				switch ($key) {
+					// handle as arrays
+					case "CIPHER_SUPPORT":
+					case "EXTERNAL_STORAGES":
+						$value   = [];
+						$entries = explode(" ", getenv($key));
+						foreach ($entries as $entry) {
+							if (false !== strpos($entry, "=")) {
+								$left         = substr($entry, 0, strpos($entry, "="));
+								$right        = substr($entry, strpos($entry, "=")+1);
+								$value[$left] = $right;
+							}
 						}
+						break;
+
+					// handle as booleans
+					case "DEBUG_MODE":
+					case "DEBUG_MODE_VERBOSE":
+					case "REPLACE_RC4":
+					case "SUPPORT_MISSING_HEADERS":
+						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+						break;
+
+					// handle strings that could be an array
+					case "INSTANCEID":
+					case "RECOVERY_PASSWORD":
+					case "SECRET":
+						$value = explode(" ", getenv($key));
+						break;
+
+					// handle user password specifically
+					case "USER_PASSWORDS":
+						$value   = [];
+						$entries = explode(" ", getenv($key));
+						foreach ($entries as $entry) {
+							if (false !== strpos($entry, "=")) {
+								$left  = substr($entry, 0, strpos($entry, "="));
+								$right = substr($entry, strpos($entry, "=")+1);
+								if (array_key_exists($left, $value)) {
+									$value[$left][] = $right;
+								} else {
+									$value[$left] = [$right];
+								}
+							}
+						}
+						break;
+
+					default:
+						$value = getenv($key);
+				}
+			}
+
+			// normalize values
+			switch ($key) {
+				case "DATADIRECTORY":
+					$value = normalizePath($value);
+					break;
+
+				case "EXTERNAL_STORAGES":
+					foreach ($value as $name => $path) {
+						$value[$name] = normalizePath($path);
 					}
 					break;
 
-				// handle as booleans
-				case "DEBUG_MODE":
-				case "DEBUG_MODE_VERBOSE":
-				case "REPLACE_RC4":
-				case "SUPPORT_MISSING_HEADERS":
-					$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+				case "INSTANCEID":
+				case "RECOVERY_PASSWORD":
+				case "SECRET":
+					if (!is_array($value)) {
+						$value = [$value];
+					}
 					break;
 
-				default:
-					$value = getenv($key);
+				case "USER_PASSWORDS":
+					$value = array_change_key_case($value);
+					foreach ($value as $name => $password) {
+						if (!is_array($value[$name])) {
+							$value[$name] = [$password];
+						}
+					}
+					break;
 			}
-		}
 
-		// normalize values
-		switch ($key) {
-			case "DATADIRECTORY":
-				$value = normalizePath($value);
-				break;
-
-			case "EXTERNAL_STORAGES":
-				foreach ($value as $name => $path) {
-					$value[$name] = normalizePath($path);
-				}
-				break;
-
-			case "USER_PASSWORDS":
-				$value = array_change_key_case($value);
-				break;
-		}
-
-		if (!defined($key)) {
+			// finally defince the constant
 			define($key, $value);
 		}
 	}
@@ -383,46 +441,52 @@
 			}
 
 			if ($proceed) {
-				$ciphertext = hex2bin($parts[0]);
-				$iv         = $parts[1];
-				$secretkey  = SECRET;
+				foreach (SECRET as $secret) {
+					$ciphertext = hex2bin($parts[0]);
+					$iv         = $parts[1];
 
-				if ($partCount === 4) {
-					$version = $parts[3];
-					if (intval($version) >= 2) {
-						$iv = hex2bin($iv);
-					}
-					if (intval($version) === 3) {
-						$temp      = hash_hkdf("sha512",
-						                       $secretkey);
-						$secretkey = substr($temp, 0, 32);
-					}
-				}
-
-				$secretkey  = hash_pbkdf2("sha1",
-				                          $secretkey,
-				                          "phpseclib",
-				                          1000,
-				                          16,
-				                          true);
-				$json       = openssl_decrypt($ciphertext,
-				                              "aes-128-cbc",
-				                              $secretkey,
-				                              OPENSSL_RAW_DATA,
-				                              $iv);
-				if (false !== $json) {
-					$json = json_decode($json, true);
-					if (is_array($json)) {
-						if (DEBUG_MODE_VERBOSE) {
-							debug("json = ".var_export($json, true));
+					if ($partCount === 4) {
+						$version = $parts[3];
+						if (intval($version) >= 2) {
+							$iv = hex2bin($iv);
 						}
-
-						if (array_key_exists("key", $json)) {
-							$result = base64_decode($json["key"]);
+						if (intval($version) === 3) {
+							$secret = hash_hkdf("sha512",
+							                    $secret);
+							$secret = substr($secret, 0, 32);
 						}
 					}
-				} else {
-					debug("json could not be decrypted: ".openssl_error_string());
+
+					$secret = hash_pbkdf2("sha1",
+					                      $secret,
+					                      "phpseclib",
+					                      1000,
+					                      16,
+					                      true);
+					$json   = openssl_decrypt($ciphertext,
+					                          "aes-128-cbc",
+					                          $secret,
+					                          OPENSSL_RAW_DATA,
+					                          $iv);
+					if (false !== $json) {
+						$json = json_decode($json, true);
+						if (is_array($json)) {
+							if (DEBUG_MODE_VERBOSE) {
+								debug("json = ".var_export($json, true));
+							}
+
+							if (array_key_exists("key", $json)) {
+								$result = base64_decode($json["key"]);
+							}
+						}
+					} else {
+						debug("json could not be decrypted: ".openssl_error_string());
+					}
+
+					// exit the loop
+					if (false !== $result) {
+						break;
+					}
 				}
 			}
 		}
@@ -461,48 +525,66 @@
 						break;
 				}
 
-				// if we need to generate the password then do it via PBKDF2 that matches the
-				// required key length for the given cipher and the chosen iterations count
-				if (0 < $iterations) {
-					// required before PHP 8.2
-					$salt = hash("sha256", $keyid.INSTANCEID.SECRET, true);
-					if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
-						$password = hash_pbkdf2("sha256",
-						                        $password,
-						                        $salt,
-						                        $iterations,
-						                        CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
-						                        true);
-					}
+				// iterate over the potential combinations
+				foreach (INSTANCEID as $instanceid) {
+					foreach (SECRET as $secret) {
+						// create a working copy of the password
+						$pass = $password;
 
-					// usable starting with PHP 8.2
-					// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
-					// 	$password = hash_pbkdf2("sha256",
-					// 	                        $password,
-					// 	                        $salt,
-					// 	                        $iterations,
-					// 	                        openssl_cipher_key_length($header[HEADER_CIPHER]),
-					// 	                        true);
-					// }
-				}
+						// if we need to generate the password then do it via PBKDF2 that matches the
+						// required key length for the given cipher and the chosen iterations count
+						if (0 < $iterations) {
+							// required before PHP 8.2
+							$salt = hash("sha256", $keyid.$instanceid.$secret, true);
+							if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
+								$pass = hash_pbkdf2("sha256",
+								                    $pass,
+								                    $salt,
+								                    $iterations,
+								                    CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
+								                    true);
+							}
 
-				$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
-				                              $header[HEADER_CIPHER],
-				                              $password,
-				                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
-				                              $meta[META_IV]);
-				if (false !== $privatekey) {
-					$res = openssl_pkey_get_private($privatekey);
-					if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
-						$sslInfo = openssl_pkey_get_details($res);
-						if (array_key_exists("key", $sslInfo)) {
-							$result = $privatekey;
+							// usable starting with PHP 8.2
+							// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
+							// 	$pass = hash_pbkdf2("sha256",
+							// 	                    $pass,
+							// 	                    $salt,
+							// 	                    $iterations,
+							// 	                    openssl_cipher_key_length($header[HEADER_CIPHER]),
+							// 	                    true);
+							// }
 						}
-					} else {
-						debug("decrypted content is not a privatekey");
+
+						$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
+						                              $header[HEADER_CIPHER],
+						                              $pass,
+						                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
+						                              $meta[META_IV]);
+						if (false !== $privatekey) {
+							$res = openssl_pkey_get_private($privatekey);
+							if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
+								$sslInfo = openssl_pkey_get_details($res);
+								if (array_key_exists("key", $sslInfo)) {
+									$result = $privatekey;
+								}
+							} else {
+								debug("decrypted content is not a privatekey");
+							}
+						} else {
+							debug("privatekey could not be decrypted: ".openssl_error_string());
+						}
+
+						// exit the loop
+						if (false !== $result) {
+							break;
+						}
 					}
-				} else {
-					debug("privatekey could not be decrypted: ".openssl_error_string());
+
+					// exit the loop
+					if (false !== $result) {
+						break;
+					}
 				}
 			}
 		}
@@ -519,11 +601,13 @@
 		foreach ($keys as $key) {
 			$file = file_get_contents_try_json($key[KEY_FILE]);
 			if (false !== $file) {
-				$privatekey = decryptPrivateKey($file, $key[KEY_PASSWORD], $key[KEY_ID]);
-				if (false !== $privatekey) {
-					$result[$key[KEY_NAME]] = $privatekey;
+				foreach ($key[KEY_PASSWORDS] as $password) {
+					$privatekey = decryptPrivateKey($file, $password, $key[KEY_ID]);
+					if (false !== $privatekey) {
+						$result[$key[KEY_NAME]] = $privatekey;
 
-					debug("loaded private key for ".$key[KEY_NAME]);
+						debug("loaded private key for ".$key[KEY_NAME]);
+					}
 				}
 			}
 		}
@@ -907,11 +991,11 @@
 	function prepareConfig() {
 		// nextcloud definitions
 		config("DATADIRECTORY", getcwd());
-		config("INSTANCEID",    "");
-		config("SECRET",        "");
+		config("INSTANCEID",    []);
+		config("SECRET",        []);
 
 		// recovery password definition
-		config("RECOVERY_PASSWORD", "");
+		config("RECOVERY_PASSWORD", []);
 
 		// user password definition
 		config("USER_PASSWORDS", []);
@@ -1215,30 +1299,30 @@
 			foreach ($filelist as $filename) {
 				if (is_file($filename)) {
 					if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => $matches["keyname"],
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => SECRET];
+						$result[] = [KEY_FILE      => $filename,
+						             KEY_ID        => $matches["keyname"],
+						             KEY_NAME      => $matches["keyname"],
+						             KEY_PASSWORDS => SECRET];
 					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => ""];
+						$result[] = [KEY_FILE      => $filename,
+						             KEY_ID        => "",
+						             KEY_NAME      => $matches["keyname"],
+						             KEY_PASSWORDS => [""]];
 					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => RECOVERY_PASSWORD];
+						$result[] = [KEY_FILE      => $filename,
+						             KEY_ID        => "",
+						             KEY_NAME      => $matches["keyname"],
+						             KEY_PASSWORDS => RECOVERY_PASSWORD];
 					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => ""];
+						$result[] = [KEY_FILE      => $filename,
+						             KEY_ID        => "",
+						             KEY_NAME      => $matches["keyname"],
+						             KEY_PASSWORDS => [""]];
 					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => RECOVERY_PASSWORD];
+						$result[] = [KEY_FILE      => $filename,
+						             KEY_ID        => "",
+						             KEY_NAME      => $matches["keyname"],
+						             KEY_PASSWORDS => RECOVERY_PASSWORD];
 					}
 				}
 			}
@@ -1266,10 +1350,10 @@
 
 						foreach ($userfiles as $userfile) {
 							if (is_file($userfile)) {
-								$result[] = [KEY_FILE     => $userfile,
-								             KEY_ID       => $matches["username"],
-								             KEY_NAME     => $matches["username"],
-								             KEY_PASSWORD => USER_PASSWORDS[strtolower($matches["username"])]];
+								$result[] = [KEY_FILE      => $userfile,
+								             KEY_ID        => $matches["username"],
+								             KEY_NAME      => $matches["username"],
+								             KEY_PASSWORDS => USER_PASSWORDS[strtolower($matches["username"])]];
 							}
 						}
 					}
