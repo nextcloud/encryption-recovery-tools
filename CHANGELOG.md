@@ -7,6 +7,10 @@
 * introduce unit tests for most of the code
 * introduce support for environment variables
 * introduce help output for better user experience
+* support array of values in `INSTANCEID`
+* support array of values in `RECOVERY_PASSWORD`
+* support array of values in `SECRET`
+* support array of passwords per user in `USER_PASSWORDS`
 * prevent execution under Windows
 
 ## v27.0.0 (2023-07-12)
