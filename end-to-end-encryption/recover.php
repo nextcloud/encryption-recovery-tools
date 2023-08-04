@@ -44,25 +44,17 @@
 	# (REQUIRED)              there does not seem to be another way to retrieve this
 	#                         value
 	#
-	# RECOVERY_PASSWORD       this is the password for the recovery key, you can set
-	# (OPTIONAL)              this value if you activated the recovery feature of your
-	#                         Nextcloud instance, leave this value empty if you did
-	#                         not acticate the recovery feature of your Nextcloud
-	#                         instance
+	# USER_MNEMONICS          these are the mnemonics for the user keys that have been
+	# (REQUIRED)              set by the Nextcloud client when creating the end-to-end
+	#                         encryption keys of the users, each value represents a
+	#                         (username, password) pair and you can set as many pairs
+	#                         as necessary
 	#
-	# USER_PASSWORDS          these are the passwords for the user keys, you have to
-	# (OPTIONAL)              set these values if you disabled the master key
-	#                         encryption of your Nextcloud instance, you do not have
-	#                         to set these values if you did not disable the master
-	#                         key encryption of your Nextcloud instance, each value
-	#                         represents a (username, password) pair and you can set
-	#                         as many pairs as necessary
-	#
-	#                         Example: if the username was "beispiel" and the password
+	#                         Example: if the username was "beispiel" and the mnemonic
 	#                                  of that user was "example" then the value has
 	#                                  to be set as:
 	#
-	#                                  config("USER_PASSWORDS",
+	#                                  config("USER_MNEMONICS",
 	#                                         ["beispiel" => "example"]);
 	#
 	# EXTERNAL_STORAGES       these are the mount paths of external folders, you have
@@ -95,26 +87,19 @@
 	#                                  config("EXTERNAL_STORAGES",
 	#                                         ["admin/sftp" => "/mnt/sshfs"]);
 	#
-	# SUPPORT_MISSING_HEADERS this is a value that tells the script if you have
-	# (OPTIONAL)              encrypted files without headers, this configuration is
-	#                         only needed if you have data from a VERY old Owncloud
-	#                         instance, you probably should not set this value as it
-	#                         will break unencrypted files that may live alongside
-	#                         your encrypted files
-	#
 	#
 	# environment variables:
 	# ======================
 	#
 	# All configuration values can alternatively be provided through environment
 	# variables and superseed the information provided within the script. Lists like
-	# EXTERNAL_STORAGES and USER_PASSWORDS must be provided as space-separated
+	# EXTERNAL_STORAGES and USER_MNEMONICS must be provided as space-separated
 	# strings.
 	#
-	# Example: if two user passwords shall be provided through an environment
+	# Example: if two user mnemonicss shall be provided through an environment
 	#          variable then the corresponding value has to be set as:
 	#
-	#          USER_PASSWORDS="user1=password1 user2=password2"
+	#          USER_MNEMONICS="user1=mnemonic1 user2=mnemonic2"
 	#
 	#
 	# execution:
@@ -156,19 +141,20 @@
 	// ===== USER CONFIGURATION =====
 
 	// nextcloud definitions - you can get these values from `config/config.php`
-	config("DATADIRECTORY", "");
-	config("INSTANCEID",    "");
-	config("SECRET",        "");
+	config("DATADIRECTORY", "~/github/encryption-recovery-tools/tests/data/end-to-end-encryption/e2e/data/");
+	config("INSTANCEID",    "ocv57gqqtmlg");
+	config("SECRET",        "z14f8YV8qL0v+mUMo6EGUVhbWYarZWSys7Xc0qpEUJDGixcW");
 
-	// recovery password definition
-	// config("RECOVERY_PASSWORD", "");
+config("USER_MNEMONICS", ["admin" => "member arm belt cute depend pull borrow rigid thank humble space illness"]);
+config("DEBUG_MODE", true);
+config("DEBUG_MODE_VERBOSE", true);
 
 	// user password definition,
 	// replace "username" with the actual usernames and "password" with the actual passwords,
 	// you can add or remove entries as necessary
-	// config("USER_PASSWORDS", ["username" => "password",
-	//                           "username" => "password",
-	//                           "username" => "password"]));
+	config("USER_MNEMONICS", ["username" => "mnemonic",
+	                          "username" => "mnemonic",
+	                          "username" => "mnemonic"]);
 
 	// external storage definition,
 	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
@@ -176,11 +162,6 @@
 	// config("EXTERNAL_STORAGES", ["storage" => "/mountpath",
 	//                              "storage" => "/mountpath",
 	//                              "storage" => "/mountpath"]);
-
-	// missing headers definition,
-	// this should only be set to TRUE if you have really old encrypted files that do not contain encryption headers,
-	// in most cases this will rather break unencrypted files that may live alongside your encrypted files
-	// config("SUPPORT_MISSING_HEADERS", false);
 
 	// debug mode definitions
 	// config("DEBUG_MODE",         false);
@@ -190,18 +171,9 @@
 
 	// ===== SYSTEM DEFINITIONS =====
 
-	// block size definitions
-	config("BLOCKSIZE", 8192);
-
-	// list of supported ciphers
-	config("CIPHER_SUPPORT", ["AES-256-CTR" => 32,
-	                          "AES-128-CTR" => 16,
-	                          "AES-256-CFB" => 32,
-	                          "AES-128-CFB" => 16]);
-
-	// filename parts used by encryption:encrypt-all
-	config("ENCRYPTION_INFIX",  ".encrypted.");
-	config("ENCRYPTION_SUFFIX", ".part");
+	// encryption definitions
+	config("BLOCKSIZE", 1024);
+	config("TAGSIZE",     16);
 
 	// prefix of decrypted external storages
 	config("EXTERNAL_PREFIX", "EXTERNAL_");
@@ -216,115 +188,119 @@
 	config("FILE_VERSION",       "version");
 	config("FILE_VERSION_TIME",  "version_number");
 
-	// header entries
-	config("HEADER_BEGIN",                "HBEGIN");
-	config("HEADER_CIPHER",               "cipher");
-	config("HEADER_END",                  "HEND");
-	config("HEADER_ENCODING",             "encoding");
-	config("HEADER_KEYFORMAT",            "keyFormat");
-	config("HEADER_OC_ENCRYPTION_MODULE", "oc_encryption_module");
-	config("HEADER_SIGNED",               "signed");
-	config("HEADER_USE_LEGACY_FILE_KEY",  "useLegacyFileKey");
-
-	// header values
-	config("HEADER_CIPHER_DEFAULT",               "AES-256-CTR");
-	config("HEADER_CIPHER_LEGACY",                "AES-128-CFB");
-	config("HEADER_ENCODING_BASE64",              "base64");
-	config("HEADER_ENCODING_BINARY",              "binary");
-	config("HEADER_KEYFORMAT_HASH",               "hash");
-	config("HEADER_KEYFORMAT_HASH2",              "hash2");
-	config("HEADER_KEYFORMAT_PASSWORD",           "password");
-	config("HEADER_OC_ENCRYPTION_MODULE_DEFAULT", "OC_DEFAULT_MODULE");
-	config("HEADER_VALUE_FALSE",                  "false");
-	config("HEADER_VALUE_TRUE",                   "true");
-
 	// key entries
-	config("KEY_FILE",     "file");
-	config("KEY_ID",       "id");
-	config("KEY_NAME",     "name");
-	config("KEY_PASSWORD", "password");
+	config("KEY_FILE",      "file");
+	config("KEY_MNEMONICS", "mnemonics");
+	config("KEY_NAME",      "name");
 
-	// meta entries
-	config("META_ENCRYPTED", "encrypted");
-	config("META_IV",        "iv");
-	config("META_SIGNATURE", "signature");
-
-	// meta entries tags
-	config("META_IV_TAG",            "00iv00");
-	config("META_PADDING_TAG_LONG",  "xxx");
-	config("META_PADDING_TAG_SHORT", "xx");
-	config("META_SIGNATURE_TAG",     "00sig00");
-
-	// define as a constant to speed up decryptions
-	config("REPLACE_RC4", checkReplaceRC4());
+	// metadata entries
+	config("METADATA_CHECKSUM",    "checksum");
+	config("METADATA_ENCRYPTED",   "encrypted");
+	config("METADATA_FILENAME",    "filename");
+	config("METADATA_FILES",       "files");
+	config("METADATA_IV",          "initializationVector");
+	config("METADATA_KEY",         "key");
+	config("METADATA_METADATA",    "metadata");
+	config("METADATA_METADATAKEY", "metadataKey");
+	config("METADATA_MIMETYPE",    "mimetype");
+	config("METADATA_TAG",         "authenticationTag");
+	config("METADATA_VERSION",     "version");
 
 	// ===== HELPER FUNCTIONS =====
 
-	// check if we have to use our own RC4 implementation
-	function checkReplaceRC4() {
-		// with OpenSSL v3 we assume that we have to replace the RC4 algo
-		$result = (OPENSSL_VERSION_NUMBER >= 0x30000000);
-
-		if ($result) {
-			// maybe someone has re-enabled the legacy support in OpenSSL v3
-			$result = (false === openssl_encrypt("test", "rc4", "test", OPENSSL_RAW_DATA, "", $tag, "", 0));
-		}
-
-		return $result;
-	}
+	// we need a specific implementation of RSA that is not provided by PHP
+	require_once(__DIR__."/vendor/autoload.php");
+	use phpseclib3\Crypt\RSA;
 
 	// only define a constant if it does not exist
 	function config($key, $value) {
-		// overwrite config with environment variable if it is set
-		if (getenv($key)) {
-			// handle specific environment variables differently
-			switch ($key) {
-				// handle as arrays
-				case "CIPHER_SUPPORT":
-				case "EXTERNAL_STORAGES":
-				case "USER_PASSWORDS":
-					$value   = [];
-					$entries = explode(" ", getenv($key));
-					foreach ($entries as $entry) {
-						if (false !== strpos($entry, "=")) {
-							$left         = substr($entry, 0, strpos($entry, "="));
-							$right        = substr($entry, strpos($entry, "=")+1);
-							$value[$left] = $right;
+		if (!defined($key)) {
+			// overwrite config with environment variable if it is set
+			if (getenv($key)) {
+				// handle specific environment variables differently
+				switch ($key) {
+					// handle as arrays
+					case "EXTERNAL_STORAGES":
+						$value   = [];
+						$entries = explode(" ", getenv($key));
+						foreach ($entries as $entry) {
+							if (false !== strpos($entry, "=")) {
+								$left         = substr($entry, 0, strpos($entry, "="));
+								$right        = substr($entry, strpos($entry, "=")+1);
+								$value[$left] = $right;
+							}
 						}
+						break;
+
+					// handle as booleans
+					case "DEBUG_MODE":
+					case "DEBUG_MODE_VERBOSE":
+						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+						break;
+
+					// handle strings that could be an array
+					case "INSTANCEID":
+					case "SECRET":
+						$value = explode(" ", getenv($key));
+						break;
+
+					// handle user mnemonics specifically
+					case "USER_MNEMONICS":
+						$value   = [];
+						$entries = explode(" ", getenv($key));
+						foreach ($entries as $entry) {
+							if (false !== strpos($entry, "=")) {
+								$left  = substr($entry, 0, strpos($entry, "="));
+								$right = substr($entry, strpos($entry, "=")+1);
+								if (array_key_exists($left, $value)) {
+									$value[$left][] = $right;
+								} else {
+									$value[$left] = [$right];
+								}
+							}
+						}
+						break;
+
+					default:
+						$value = getenv($key);
+				}
+			}
+
+			// normalize values
+			switch ($key) {
+				case "DATADIRECTORY":
+					$value = normalizePath($value);
+					break;
+
+				case "EXTERNAL_STORAGES":
+					foreach ($value as $name => $path) {
+						$value[$name] = normalizePath($path);
 					}
 					break;
 
-				// handle as booleans
-				case "DEBUG_MODE":
-				case "DEBUG_MODE_VERBOSE":
-				case "REPLACE_RC4":
-				case "SUPPORT_MISSING_HEADERS":
-					$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+				case "INSTANCEID":
+				case "SECRET":
+					if (!is_array($value)) {
+						$value = [$value];
+					}
 					break;
 
-				default:
-					$value = getenv($key);
+				case "USER_MNEMONICS":
+					$value = array_change_key_case($value);
+					foreach ($value as $name => $mnemonic) {
+						if (!is_array($value[$name])) {
+							$value[$name] = [$mnemonic];
+						}
+
+						// cleanup mnemonics
+						foreach ($value[$name] as $mnemonic_key => $mnemonic_value) {
+							$value[$name][$mnemonic_key] = preg_replace("@\s+@", "", strtolower($mnemonic_value));
+						}
+					}
+					break;
 			}
-		}
 
-		// normalize values
-		switch ($key) {
-			case "DATADIRECTORY":
-				$value = normalizePath($value);
-				break;
-
-			case "EXTERNAL_STORAGES":
-				foreach ($value as $name => $path) {
-					$value[$name] = normalizePath($path);
-				}
-				break;
-
-			case "USER_PASSWORDS":
-				$value = array_change_key_case($value);
-				break;
-		}
-
-		if (!defined($key)) {
+			// finally define the constant
 			define($key, $value);
 		}
 	}
@@ -345,6 +321,83 @@
 		return $directory."/".$file;
 	}
 
+	// convert a GCM nonce to a CTR counter
+	function convertGCMtoCTR($iv, $key, $algo) {
+		$result = null;
+
+		// check special case first
+		if (0x0C === strlen($iv)) {
+			$result = $iv.hex2bin("00000002");
+		} else {
+			// produce GHASH of the nonce
+			$subkey = openssl_encrypt(hex2bin("00000000000000000000000000000000"),
+			                          $algo,
+			                          $key,
+			                          OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
+			if (false !== $subkey) {
+				// store for later use
+				$ivlen = strlen($iv);
+
+				// pad iv to 128 bit block
+				if (0x00 !== ($ivlen % 0x10)) {
+					$iv = $iv.str_repeat(hex2bin("00"), 0x10 - ($ivlen % 0x10));
+				}
+
+				// append zero padding
+				$iv = $iv.hex2bin("0000000000000000");
+
+				// append 64-bit iv length
+				$iv = $iv.hex2bin("00000000").pack("N", ($ivlen << 0x03));
+
+				// actual GHASH calculation
+				$result = hex2bin("00000000000000000000000000000000");
+				for ($i = 0x00; $i < strlen($iv)/0x10; $i++) {
+					$block  = $result ^ substr($iv, $i * 0x10, 0x10);
+					$tmp    = hex2bin("00000000000000000000000000000000");
+					$tmpkey = $subkey;
+
+					// execute the multipliation
+					for ($index = 0x00; $index < strlen($block); $index++) {
+						for ($bit = 0x07; $bit >= 0x00; $bit--) {
+							// store for later use
+							$adder = (ord($tmpkey[strlen($tmpkey)-0x01]) & 0x01);
+							$mixer = ((ord($block[$index]) >> $bit) & 0x01);
+
+							// merge tmpkey into tmp,
+							// do this in a loop for constant time
+							for ($byte = 0x00; $byte < strlen($tmp); $byte++) {
+								$tmp[$byte] = chr(ord($tmp[$byte]) ^ (ord($tmpkey[$byte]) * $mixer));
+							}
+
+							// shift least significant bit out of the tmpkey,
+							// afterwards mix the adder into tmpkey,
+							// do this in constant time
+							$shifted = 0x00;
+							for ($byte = 0; $byte < strlen($tmpkey); $byte++) {
+								$tmpval        = (ord($tmpkey[$byte]) & 0x01);
+								$tmpkey[$byte] = chr((($shifted << 0x07) & 0x80) | ((ord($tmpkey[$byte]) >> 0x01) & 0x7F));
+								$shifted       = $tmpval;
+							}
+							$tmpkey[0x00] = chr(ord($tmpkey[0x00]) ^ (0xE1 * $adder));
+						}
+					}
+
+					$result = $tmp;
+				}
+
+				// add 0x01 to the result
+				$remainder = 0x01;
+				for ($index = strlen($result)-0x01; $index >= 0x00; $index--) {
+					$tmp            = (((ord($result[$index]) + $remainder) >> 0x08) & 0xFF);
+					$result[$index] = chr((ord($result[$index]) + $remainder) & 0xFF);
+					$remainder      = $tmp;
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	// print messages only if the debug mode is active
 	function debug($string) {
 		if (DEBUG_MODE) {
@@ -352,61 +405,130 @@
 		}
 	}
 
-	// decrypted JSON-wrapped blobs
-	function decryptJson($file) {
+	// print the configuration to the verbose debug log
+	function debugConfig() {
+		if (DEBUG_MODE_VERBOSE) {
+			debug("DATADIRECTORY = ".var_export(DATADIRECTORY, true));
+			debug("DEBUG_MODE = ".var_export(DEBUG_MODE, true));
+			debug("DEBUG_MODE_VERBOSE = ".var_export(DEBUG_MODE_VERBOSE, true));
+			debug("EXTERNAL_STORAGES = ".var_export(EXTERNAL_STORAGES, true));
+			debug("INSTANCEID = ".var_export(INSTANCEID, true));
+			debug("SECRET = ".var_export(SECRET, true));
+			debug("USER_MNEMONICS = ".var_export(USER_MNEMONICS, true));
+		}
+	}
+
+	// parse a metadata file and try to decrypt it
+	function decryptMetaDate($file, $privatekeys) {
 		$result = false;
 
-		$parts     = explode("|", $file);
-		$partCount = count($parts);
-
-		if (($partCount >= 3) && ($partCount <= 4)) {
-			// we only proceed if all strings are hexadecimal
-			$proceed = true;
-			foreach ($parts as $part) {
-				$proceed = ($proceed && ctype_xdigit($part));
-			}
-
-			if ($proceed) {
-				$ciphertext = hex2bin($parts[0]);
-				$iv         = $parts[1];
-				$secretkey  = SECRET;
-
-				if ($partCount === 4) {
-					$version = $parts[3];
-					if (intval($version) >= 2) {
-						$iv = hex2bin($iv);
-					}
-					if (intval($version) === 3) {
-						$temp      = hash_hkdf("sha512",
-						                       $secretkey);
-						$secretkey = substr($temp, 0, 32);
+		$json = json_decode($file,
+		                    true,
+		                    4,
+		                    JSON_OBJECT_AS_ARRAY);
+		if (is_array($json) &&
+		    array_key_exists(METADATA_FILES,    $json) &&
+		    array_key_exists(METADATA_METADATA, $json) &&
+		    is_array($json[METADATA_FILES])            &&
+		    is_array($json[METADATA_METADATA])) {
+			// try to decrypt the metadata key
+			$key = null;
+			foreach ($privatekeys as $privatekey) {
+				if (array_key_exists(METADATA_METADATAKEY, $json[METADATA_METADATA])) {
+					$tmp = base64_decode($json[METADATA_METADATA][METADATA_METADATAKEY]);
+					if (false !== $tmp) {
+						$tmp = RSA::loadPrivateKey($privatekey)
+						       ->withPadding(RSA::ENCRYPTION_OAEP)
+						       ->withHash("sha256")
+						       ->withMGFHash("sha256")
+						       ->decrypt($tmp);
+						if (false !== $tmp) {
+							// yes, this really is base64-encoded several times
+							$key = base64_decode(base64_decode($tmp));
+						} else {
+							debug("metadata key could not be decrypted...");
+						}
 					}
 				}
 
-				$secretkey  = hash_pbkdf2("sha1",
-				                          $secretkey,
-				                          "phpseclib",
-				                          1000,
-				                          16,
-				                          true);
-				$json       = openssl_decrypt($ciphertext,
-				                              "aes-128-cbc",
-				                              $secretkey,
-				                              OPENSSL_RAW_DATA,
-				                              $iv);
-				if (false !== $json) {
-					$json = json_decode($json, true);
-					if (is_array($json)) {
-						if (DEBUG_MODE_VERBOSE) {
-							debug("json = ".var_export($json, true));
+				// exit the lopp
+				if (null !== $key) {
+					break;
+				}
+			}
+
+			if (null !== $key) {
+				$result = [];
+
+				foreach ($json[METADATA_FILES] as $filename => $file) {
+					if (array_key_exists(METADATA_ENCRYPTED, $file) &&
+					    array_key_exists(METADATA_IV,        $file) &&
+					    array_key_exists(METADATA_TAG,       $file)) {
+						// extract parts of the metadata
+						$parts = null;
+						if (false !== strpos($file[METADATA_ENCRYPTED], "|")) {
+							$parts = explode("|", $file[METADATA_ENCRYPTED]);
 						}
 
-						if (array_key_exists("key", $json)) {
-							$result = base64_decode($json["key"]);
+						// we at least need two parts
+						if ((is_array($parts)) && (2 <= count($parts))) {
+							// parse the metadata structure
+							$ciphertext = substr(base64_decode($parts[0]), 0, -TAGSIZE);
+							$iv         = base64_decode($parts[1]);
+							$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
+
+							// migrate GCM nonce to CTR counter,
+							// we don't use GCM so that broken
+							// integrity data do not break the
+							// decryption
+							$iv = convertGCMtoCTR($iv, $key, "aes-128-ecb");
+
+							// decrypt metadata
+							$metadata = openssl_decrypt($ciphertext,
+							                            "aes-128-ctr",
+							                            $key,
+							                            OPENSSL_RAW_DATA,
+							                            $iv);
+							if (false !== $metadata) {
+								$metadata = base64_decode($metadata);
+								if (false !== $metadata) {
+									var_dump($metadata);
+								} else {
+									debug("decrypted metadata are not base64-encoded");
+								}
+							} else {
+								debug("metadata could not be decrypted: ".openssl_error_string());
+							}
+						} else {
+							debug("encrypted metadata have wrong structure");
 						}
+					} else {
+						debug("metadata file entry has wrong structure");
 					}
-				} else {
-					debug("json could not be decrypted: ".openssl_error_string());
+				}
+			} else {
+				debug("metadata key could not be decrypted");
+			}
+		} else {
+			debug("metadata file has wrong structure");
+		}
+
+		return $result;
+	}
+
+	// try to decrypt all available metadata files
+	function decryptMetaData($privatekeys) {
+		$result = [];
+
+		$files = searchMetaData();
+		foreach ($files as $filename) {
+			$file = file_get_contents_try_json($filename);
+			if (false !== $file) {
+				$metadate = decryptMetaDate($file, $privatekeys);
+				if (false !== $metadate) {
+					$result = array_merge($result, $metadate);
+
+					debug("loaded metadata from $filename");
 				}
 			}
 		}
@@ -415,64 +537,48 @@
 	}
 
 	// parse a private key file and try to decrypt it
-	function decryptPrivateKey($file, $password, $keyid) {
+	function decryptPrivateKey($file, $mnemonic) {
 		$result = false;
 
-		$header = parseHeader($file, SUPPORT_MISSING_HEADERS);
-
-		// strip header to parse meta data
-		$meta = $file;
-		if (substr($meta, 0, strlen(HEADER_BEGIN)) === HEADER_BEGIN) {
-			$meta = substr($meta, strpos($meta, HEADER_END)+strlen(HEADER_END));
+		// extract parts of the private key format
+		$parts = null;
+		if (false !== strpos($file, "|")) {
+			$parts = explode("|", $file);
+		} elseif (false !== strpos($file, "fA==")) {
+			$parts = explode("fA==", $file);
 		}
-		$meta = parseMetaData($meta);
 
-		if (is_array($header) && is_array($meta)) {
-			if (array_key_exists(HEADER_CIPHER,    $header) &&
-			    array_key_exists(HEADER_ENCODING,  $header) &&
-			    array_key_exists(HEADER_KEYFORMAT, $header) &&
-			    array_key_exists(META_ENCRYPTED,   $meta)   &&
-			    array_key_exists(META_IV,          $meta)) {
-				// set default secret key
-				$secretkey = $password;
+		// we at least need three parts
+		if ((is_array($parts)) && (3 <= count($parts))) {
+			// parse the private key structure
+			$ciphertext = substr(base64_decode($parts[0]), 0, -TAGSIZE);
+			$iv         = base64_decode($parts[1]);
+			$salt       = base64_decode($parts[2]);
+			$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
 
-				// check if we need to generate the password hash
-				$iterations = 0;
-				switch ($header[HEADER_KEYFORMAT]) {
-					case HEADER_KEYFORMAT_HASH:
-						$iterations = 100000;
-						break;
+			// derive actual secret
+			$mnemonic = hash_pbkdf2("sha1",
+			                        $mnemonic,
+			                        $salt,
+			                        1024,
+			                        32,
+			                        true);
 
-					case HEADER_KEYFORMAT_HASH2:
-						$iterations = 600000;
-						break;
-				}
+			// migrate GCM nonce to CTR counter,
+			// we don't use GCM so that broken
+			// integrity data do not break the
+			// decryption
+			$iv = convertGCMtoCTR($iv, $mnemonic, "aes-256-ecb");
 
-				// if we need to generate the password then do it via PBKDF2 that matches the
-				// required key length for the given cipher and the chosen iterations count
-				if (0 < $iterations) {
-					// required before PHP 8.2
-					$salt = hash("sha256", $keyid.INSTANCEID.SECRET, true);
-					if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
-						$secretkey = hash_pbkdf2("sha256",
-						                         $secretkey,
-						                         $salt,
-						                         $iterations,
-						                         CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
-						                         true);
-					}
-
-					// usable starting with PHP 8.2
-					// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
-					// 	$secretkey = hash_pbkdf2("sha256", $secretkey, $salt, $iterations, openssl_cipher_key_length($header[HEADER_CIPHER]), true);
-					// }
-				}
-
-				$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
-				                              $header[HEADER_CIPHER],
-				                              $secretkey,
-				                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
-				                              $meta[META_IV]);
+			// decrypt private key
+			$privatekey = openssl_decrypt($ciphertext,
+			                              "aes-256-ctr",
+			                              $mnemonic,
+			                              OPENSSL_RAW_DATA,
+			                              $iv);
+			if (false !== $privatekey) {
+				// base64-decode again just for good measure
+				$privatekey = base64_decode($privatekey);
 				if (false !== $privatekey) {
 					$res = openssl_pkey_get_private($privatekey);
 					if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
@@ -480,11 +586,17 @@
 						if (array_key_exists("key", $sslInfo)) {
 							$result = $privatekey;
 						}
+					} else {
+						debug("decrypted content is not a privatekey");
 					}
 				} else {
-					debug("privatekey could not be decrypted: ".openssl_error_string());
+					debug("decrypted content is not base64-encoded");
 				}
+			} else {
+				debug("privatekey could not be decrypted: ".openssl_error_string());
 			}
+		} else {
+			debug("privatekey file has wrong structure");
 		}
 
 		return $result;
@@ -499,86 +611,14 @@
 		foreach ($keys as $key) {
 			$file = file_get_contents_try_json($key[KEY_FILE]);
 			if (false !== $file) {
-				$privatekey = decryptPrivateKey($file, $key[KEY_PASSWORD], $key[KEY_ID]);
-				if (false !== $privatekey) {
-					$result[$key[KEY_NAME]] = $privatekey;
+				foreach ($key[KEY_MNEMONICS] as $mnemonic) {
+					$privatekey = decryptPrivateKey($file, $mnemonic);
+					if (false !== $privatekey) {
+						$result[$key[KEY_NAME]] = $privatekey;
 
-					debug("loaded private key for ".$key[KEY_NAME]);
-				}
-			}
-		}
-
-		return $result;
-	}
-
-	// try to find and decrypt the secret key for the parsed filename
-	function decryptSecretKey($parsed, $privatekeys) {
-		$result = null;
-
-		// retrieve all potential key material
-		$filekeys  = searchFileKeys($parsed);
-		$sharekeys = searchShareKeys($parsed, array_keys($privatekeys));
-
-		foreach ($sharekeys as $keyname => $sharekeyname) {
-			$sharekey = file_get_contents_try_json($sharekeyname);
-			if (false !== $sharekey) {
-				// try to decrypt legacy file key first
-				foreach ($filekeys as $filekeyname) {
-					$filekey = file_get_contents_try_json($filekeyname);
-					if (false !== $filekey) {
-						if (wrapped_openssl_open($filekey,
-						                         $tmpkey,
-						                         $sharekey,
-						                         $privatekeys[$keyname],
-						                         "rc4")) {
-							$result = $tmpkey;
-						} else {
-							debug("secretkey could not be decrypted from legacy file key...");
-						}
-					} else {
-						debug("filekey could not be read from file...");
-					}
-
-					// exit the loop
-					if (null !== $result) {
-						break;
+						debug("loaded private key for ".$key[KEY_NAME]);
 					}
 				}
-
-				// try to decrypt the new share key second,
-				// we also do this when there is a file key in case it is a leftover
-				if (null === $result) {
-					if (openssl_private_decrypt($sharekey,
-					                            $tmpkey,
-					                            $privatekeys[$keyname],
-					                            OPENSSL_PKCS1_OAEP_PADDING)) {
-						$result = $tmpkey;
-					} else {
-						debug("openssl_private_decrypt() failed: ".openssl_error_string());
-						debug("secretkey could not be decrypted...");
-					}
-				}
-			} else {
-				debug("sharekey could not be read from file...");
-			}
-
-			// exit the loop
-			if (null !== $result) {
-				break;
-			}
-		}
-
-		return $result;
-	}
-
-	// read a file and automagically try to decrypt it in case it is a JSON-wrapped blob
-	function file_get_contents_try_json($filename) {
-		$result = file_get_contents($filename);
-
-		if (false !== $result) {
-			$tmp = decryptJson($result);
-			if (false !== $tmp) {
-				$result = $tmp;
 			}
 		}
 
@@ -773,127 +813,18 @@
 		return $result;
 	}
 
-	// try to parse the file header
-	function parseHeader($file, $supportMissingHeaders) {
-		$result = [];
-
-		if ((0 === strpos($file, HEADER_BEGIN)) && (false !== strpos($file, HEADER_END))) {
-			// prepare default values
-			$result[HEADER_CIPHER]               = HEADER_CIPHER_LEGACY;
-			$result[HEADER_ENCODING]             = HEADER_ENCODING_BASE64;
-			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
-			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
-			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
-			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
-
-			// extract content between HBEGIN and HEND
-			$header = substr($file, strlen(HEADER_BEGIN), strpos($file, HEADER_END)-strlen(HEADER_BEGIN));
-
-			// get array from header
-			$exploded = explode(":", $header);
-
-			// unset leading and trailing empty entries
-			// which stem from the separators after
-			// HBEGIN and before HEND
-			array_pop($exploded);
-			array_shift($exploded);
-
-			while (0 < count($exploded)) {
-				$key   = array_shift($exploded);
-				$value = array_shift($exploded);
-
-				// we do not set empty values
-				if ((0 < strlen($key ?? "")) && (0 < strlen($value ?? ""))) {
-					$result[$key] = $value;
-				}
-			}
-		} elseif ($supportMissingHeaders) {
-			// prepare default values
-			$result[HEADER_CIPHER]               = HEADER_CIPHER_LEGACY;
-			$result[HEADER_ENCODING]             = HEADER_ENCODING_BASE64;
-			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
-			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
-			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
-			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
-
-			debug("key is using legacy format, setting default values...");
-		}
-
-		if (DEBUG_MODE_VERBOSE) {
-			debug("header = ".var_export($result, true));
-		}
-
-		return $result;
-	}
-
-	// try to parse the block
-	//
-	// the structure WITH signature is:
-	//
-	// 00iv00................00sig00...
-	// ................................
-	// .............................xxx
-	//
-	// the structure WITHOUT signature is:
-	//
-	// 00iv00................xx
-	//
-	function parseMetaData($file) {
-		$result = [];
-
-		// check if there is a signature in the block
-		if (false !== strpos(substr($file, -74), META_SIGNATURE_TAG)) {
-			// remove the long padding from the block
-			if (META_PADDING_TAG_LONG === substr($file, -3)) {
-				$file = substr($file, 0, -3);
-			}
-			$meta = substr($file, -93);
-
-			$result[META_ENCRYPTED] = substr($file, 0, -93);
-			$result[META_IV]        = substr($meta, strlen(META_IV_TAG), 16);
-			$result[META_SIGNATURE] = substr($meta, 22+strlen(META_SIGNATURE_TAG));
-
-		} else {
-			// remove the short padding from the block
-			if (META_PADDING_TAG_SHORT === substr($file, -2)) {
-				$file = substr($file, 0, -2);
-			}
-			$meta = substr($file, -22);
-
-			$result[META_ENCRYPTED] = substr($file, 0, -22);
-			$result[META_IV]        = substr($meta, -16);
-			$result[META_SIGNATURE] = false;
-		}
-
-		if (DEBUG_MODE_VERBOSE) {
-			// prepare array for debugging
-			$debug_result = [META_ENCRYPTED => shortenString(bin2hex($result[META_ENCRYPTED]), 131, "...")." (".strlen($result[META_ENCRYPTED])." bytes)",
-			                 META_IV        => bin2hex($result[META_IV]),
-			                 META_SIGNATURE => $result[META_SIGNATURE]];
-			debug("meta = ".var_export($debug_result, true));
-		}
-
-		return $result;
-	}
-
 	// make sure that all configuration values exist
 	function prepareConfig() {
 		// nextcloud definitions
 		config("DATADIRECTORY", getcwd());
-		config("INSTANCEID",    null);
-		config("SECRET",        null);
+		config("INSTANCEID",    []);
+		config("SECRET",        []);
 
-		// recovery password definition
-		config("RECOVERY_PASSWORD", null);
-
-		// user password definition
-		config("USER_PASSWORDS", []);
+		// user mnemonic definition
+		config("USER_MNEMONICS", []);
 
 		// external storage definition
 		config("EXTERNAL_STORAGES", []);
-
-		// missing headers definition
-		config("SUPPORT_MISSING_HEADERS", false);
 
 		// debug mode definitions
 		config("DEBUG_MODE",         false);
@@ -995,47 +926,6 @@
 		print($string.PHP_EOL);
 	}
 
-	// hands-down implementation of RC4
-	function rc4($data, $secret) {
-		$result = false;
-
-		// initialize $state
-		$state = [];
-		for ($i = 0x00; $i <= 0xFF; $i++) {
-			$state[$i] = $i;
-		}
-
-		// mix $secret into $state
-		$indexA = 0x00;
-		$indexB = 0x00;
-		for ($i = 0x00; $i <= 0xFF; $i++) {
-			$indexB = ($indexB + ord($secret[$indexA]) + $state[$i]) % 0x100;
-
-			$tmp            = $state[$i];
-			$state[$i]      = $state[$indexB];
-			$state[$indexB] = $tmp;
-
-			$indexA = ($indexA + 0x01) % strlen($secret);
-		}
-
-		// decrypt $data with $state
-		$indexA = 0x00;
-		$indexB = 0x00;
-		$result = "";
-		for ($i = 0x00; $i < strlen($data); $i++) {
-			$indexA = ($indexA + 0x01) % 0x100;
-			$indexB = ($state[$indexA] + $indexB) % 0x100;
-
-			$tmp            = $state[$indexA];
-			$state[$indexA] = $state[$indexB];
-			$state[$indexB] = $tmp;
-
-			$result .= chr(ord($data[$i]) ^ $state[($state[$indexA] + $state[$indexB]) % 0x100]);
-		}
-
-		return $result;
-	}
-
 	// scan a folder and optionally scan it recursively
 	function recursiveScandir($path, $recursive = true) {
 		$result = [];
@@ -1060,103 +950,26 @@
 		return $result;
 	}
 
-	// test different filename structures for the filekey
-	function searchFileKeys($parsed) {
+	// test different filename structures for the metadata files
+	function searchMetaData() {
 		$result = [];
 
-		if (is_array($parsed)) {
-			if (array_key_exists(FILE_NAME,          $parsed) &&
-			    array_key_exists(FILE_NAME_RAW,      $parsed) &&
-			    array_key_exists(FILE_TRASHBIN,      $parsed) &&
-			    array_key_exists(FILE_TRASHBIN_TIME, $parsed) &&
-			    array_key_exists(FILE_USERNAME,      $parsed)) {
-				// set trashbin path
-				$trashbin = ($parsed[FILE_TRASHBIN]) ? "files_trashbin" : "";
+		foreach (INSTANCEID as $instanceid) {
+			// potential metadata path
+			$metadatapath = normalizePath(DATADIRECTORY."/appdata_".$instanceid."/end_to_end_encryption/meta-data/");
 
-				$filekeys = [[DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/files/", $parsed[FILE_NAME],     "/OC_DEFAULT_MODULE/fileKey"],
-				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/",       $parsed[FILE_NAME],     "/fileKey"],
-				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/".$trashbin."/keyfiles/",   $parsed[FILE_NAME],     ".key"],
-				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keyfiles/",                    $parsed[FILE_NAME],     ".key"],
-				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keyfiles/",                    $parsed[FILE_NAME_RAW], ".key.d".$parsed[FILE_TRASHBIN_TIME]],
-				             [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keys/",                        $parsed[FILE_NAME],     "/fileKey"]];
-
-				foreach ($filekeys as $filekey) {
-					// try default locations
-					if (is_file(normalizePath(implode("", $filekey)))) {
-						$result[] = normalizePath(implode("", $filekey));
-					}
-
-					// check if we can find a file with the encryption suffix
-					if (is_file(normalizePath($filekey[0].$filekey[1].ENCRYPTION_SUFFIX.$filekey[2]))) {
-						$result[] = normalizePath($filekey[0].$filekey[1].ENCRYPTION_SUFFIX.$filekey[2]);
-					}
-
-					// check if we can find a folder with the encryption infix
-					$filelist = recursiveScandir(dirname(normalizePath($filekey[0].$filekey[1])), false);
-					foreach ($filelist as $filename) {
-						if (1 === preg_match("@^".preg_quote(normalizePath($filekey[0].$filekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
-							if (is_file(normalizePath($filename.$filekey[2]))) {
-								$result[] = normalizePath($filename.$filekey[2]);
-							}
-						}
+			$filelist = recursiveScandir($metadatapath, true);
+			foreach ($filelist as $filename) {
+				if (is_file($filename)) {
+					if (1 === preg_match("@^".preg_quote($metadatapath, "@")."/.+/meta\.data$@", $filename)) {
+						$result[] = $filename;
 					}
 				}
 			}
 		}
 
 		if (DEBUG_MODE_VERBOSE) {
-			debug("filekeys = ".var_export($result, true));
-		}
-
-		return $result;
-	}
-
-	// test different filename structures for the sharekey
-	function searchShareKeys($parsed, $keynames) {
-		$result = [];
-
-		if (is_array($parsed) && is_array($keynames)) {
-			if (array_key_exists(FILE_NAME,          $parsed) &&
-			    array_key_exists(FILE_NAME_RAW,      $parsed) &&
-			    array_key_exists(FILE_TRASHBIN,      $parsed) &&
-			    array_key_exists(FILE_TRASHBIN_TIME, $parsed) &&
-			    array_key_exists(FILE_USERNAME,      $parsed)) {
-				// set trashbin path
-				$trashbin = ($parsed[FILE_TRASHBIN]) ? "files_trashbin" : "";
-
-				foreach ($keynames as $keyname) {
-					$sharekeys = [[DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/files/", $parsed[FILE_NAME],     "/OC_DEFAULT_MODULE/".$keyname.".shareKey"],
-					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/keys/".$trashbin."/",       $parsed[FILE_NAME],     "/".$keyname.".shareKey"],
-					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/files_encryption/".$trashbin."/share-keys/", $parsed[FILE_NAME],     ".".$keyname.".shareKey"],
-					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/share-keys/",                  $parsed[FILE_NAME],     ".".$keyname.".shareKey"],
-					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/share-keys/",                  $parsed[FILE_NAME_RAW], ".".$keyname.".shareKey.d".$parsed[FILE_TRASHBIN_TIME]],
-					              [DATADIRECTORY."/".$parsed[FILE_USERNAME]."/".$trashbin."/keys/",                        $parsed[FILE_NAME],     "/".$keyname.".shareKey"]];
-
-					foreach ($sharekeys as $sharekey) {
-						// try default locations
-						if (is_file(normalizePath(implode("", $sharekey)))) {
-							$result[$keyname] = normalizePath(implode("", $sharekey));
-						}
-
-						// check if we can find a file with the encryption suffix
-						if (is_file(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]))) {
-							$result[$keyname] = normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_SUFFIX.$sharekey[2]);
-						}
-
-						// check if we can find a folder with the encryption infix
-						$filelist = recursiveScandir(dirname(normalizePath($sharekey[0].$sharekey[1])), false);
-						foreach ($filelist as $filename) {
-							if (1 === preg_match("@^".preg_quote(normalizePath($sharekey[0].$sharekey[1].ENCRYPTION_INFIX), "@")."[0-9]+$@", $filename, $matches)) {
-								$result[$keyname] = normalizePath($filename.$sharekey[2]);
-							}
-						}
-					}
-				}
-			}
-		}
-
-		if (DEBUG_MODE_VERBOSE) {
-			debug("sharekeys = ".var_export($result, true));
+			debug("metadata = ".var_export($result, true));
 		}
 
 		return $result;
@@ -1164,73 +977,27 @@
 
 	// test different filename structures for the system keys
 	function searchSystemKeys() {
-		$result = [];
-
-		$systemdirs = [normalizePath(DATADIRECTORY."/files_encryption/OC_DEFAULT_MODULE/"),
-		               normalizePath(DATADIRECTORY."/files_encryption/"),
-		               normalizePath(DATADIRECTORY."/owncloud_private_key/")];
-
-		foreach ($systemdirs as $systemdir) {
-			$filelist = recursiveScandir($systemdir, false);
-			foreach ($filelist as $filename) {
-				if (is_file($filename)) {
-					if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>master_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => $matches["keyname"],
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => SECRET];
-					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>pubShare_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => ""];
-					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/files_encryption/(OC_DEFAULT_MODULE/)?(?<keyname>recovery(Key)?_[0-9a-z]+)\.privateKey$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => RECOVERY_PASSWORD];
-					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>pubShare_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => ""];
-					} elseif (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/owncloud_private_key/(?<keyname>recovery(Key)?_[0-9a-z]+)\.private\.key$@", $filename, $matches)) {
-						$result[] = [KEY_FILE     => $filename,
-						             KEY_ID       => "",
-						             KEY_NAME     => $matches["keyname"],
-						             KEY_PASSWORD => RECOVERY_PASSWORD];
-					}
-				}
-			}
-		}
-
-		if (DEBUG_MODE_VERBOSE) {
-			debug("systemkeys = ".var_export($result, true));
-		}
-
-		return $result;
+		// there currently are no system keys,
+		// could come back when recovery key support is added
+		return [];
 	}
 
 	// test different filename structures for the user keys
 	function searchUserKeys() {
 		$result = [];
 
-		$filelist = recursiveScandir(DATADIRECTORY, false);
-		foreach ($filelist as $filename) {
-			if (is_dir($filename)) {
-				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/(?<username>[0-9A-Za-z\.\-\_\@]+)$@", $filename, $matches)) {
-					if (array_key_exists(strtolower($matches["username"]), USER_PASSWORDS)) {
-						$userfiles = [normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/OC_DEFAULT_MODULE/".$matches["username"].".privateKey"),
-						              normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/".$matches["username"].".privateKey"),
-						              normalizePath(DATADIRECTORY."/".$matches["username"]."/files_encryption/".$matches["username"].".private.key")];
+		foreach (INSTANCEID as $instanceid) {
+			// potential key path
+			$keypath = normalizePath(DATADIRECTORY."/appdata_".$instanceid."/end_to_end_encryption/private-keys/");
 
-						foreach ($userfiles as $userfile) {
-							if (is_file($userfile)) {
-								$result[] = [KEY_FILE     => $userfile,
-								             KEY_ID       => $matches["username"],
-								             KEY_NAME     => $matches["username"],
-								             KEY_PASSWORD => USER_PASSWORDS[strtolower($matches["username"])]];
-							}
+			$filelist = recursiveScandir($keypath, false);
+			foreach ($filelist as $filename) {
+				if (is_file($filename)) {
+					if (1 === preg_match("@^".preg_quote($keypath, "@")."/(?<username>[0-9A-Za-z\.\-\_\@]+)\.private\.key$@", $filename, $matches)) {
+						if (array_key_exists(strtolower($matches["username"]), USER_MNEMONICS)) {
+							$result[] = [KEY_FILE      => $filename,
+							             KEY_MNEMONICS => USER_MNEMONICS[strtolower($matches["username"])],
+							             KEY_NAME      => $matches["username"]];
 						}
 					}
 				}
@@ -1251,38 +1018,6 @@
 		// check if it makes sense to shorten the string
 		if ((strlen($result) > $length) && (strlen($filler) < $length)) {
 			$result = substr_replace($result, $filler, ceil($length - strlen($filler)) / 2, -floor(($length - strlen($filler)) / 2));
-		}
-
-		return $result;
-	}
-
-	// try to do an RC4 openssl_open() but fall back to our custom implementation if needed
-	function wrapped_openssl_open($data, &$output, $encrypted_key, $private_key, $cipher_algo, $iv = null) {
-		$result = false;
-
-		if ((0 === strcasecmp($cipher_algo, "rc4")) && REPLACE_RC4) {
-			if (openssl_private_decrypt($encrypted_key,
-			                            $intermediate,
-			                            $private_key,
-			                            OPENSSL_PKCS1_PADDING)) {
-				$output = rc4($data, $intermediate);
-				$result = (false !== $output);
-				if (!$result) {
-					debug("rc4() failed");
-				}
-			} else {
-				debug("openssl_private_decrypt() failed: ".openssl_error_string());
-			}
-		} else {
-			$result = openssl_open($data,
-			                       $output,
-			                       $encrypted_key,
-			                       $private_key,
-			                       $cipher_algo,
-			                       $iv);
-			if (!$result) {
-				debug("openssl_open() failed: ".openssl_error_string());
-			}
 		}
 
 		return $result;
@@ -1457,6 +1192,14 @@
 			println("WARNING: COULD NOT DECRYPT ANY PRIVATE KEY");
 		}
 
+		// try to decrypt as many metadata as possible
+		$metadata = decryptMetaData($privatekeys);
+		if (0 >= count($metadata)) {
+			println("WARNING: COULD NOT DECRYPT ANY META DATA");
+		}
+
+/*
+
 		// collect all file sources
 		$sources = prepareSources($sourcepaths);
 		foreach ($sources as $source_name => $source_path) {
@@ -1560,6 +1303,7 @@
 				}
 			}
 		}
+*/
 
 		return $result;
 	}
@@ -1590,6 +1334,7 @@
 				prepareConfig();
 
 				debug("debug mode enabled");
+				debugConfig();
 
 				// we want to work with an empty stat cache
 				clearstatcache(true);

@@ -189,7 +189,7 @@
 	// you can add or remove entries as necessary
 	// config("USER_PASSWORDS", ["username" => "password",
 	//                           "username" => "password",
-	//                           "username" => "password"]));
+	//                           "username" => "password"]);
 
 	// external storage definition,
 	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
@@ -383,7 +383,7 @@
 					break;
 			}
 
-			// finally defince the constant
+			// finally define the constant
 			define($key, $value);
 		}
 	}
@@ -477,7 +477,11 @@
 
 							if (array_key_exists("key", $json)) {
 								$result = base64_decode($json["key"]);
+							} else {
+								debug("decrypted json does not contain key field");
 							}
+						} else {
+							debug("decrypted json has wrong structure");
 						}
 					} else {
 						debug("json could not be decrypted: ".openssl_error_string());
@@ -488,7 +492,11 @@
 						break;
 					}
 				}
+			} else {
+				debug("json file is not hex-encoded");
 			}
+		} else {
+			debug("json file has wrong structure");
 		}
 
 		return $result;
@@ -507,78 +515,73 @@
 		}
 		$meta = parseMetaData($meta);
 
-		if (is_array($header) && is_array($meta)) {
-			if (array_key_exists(HEADER_CIPHER,    $header) &&
-			    array_key_exists(HEADER_ENCODING,  $header) &&
-			    array_key_exists(HEADER_KEYFORMAT, $header) &&
-			    array_key_exists(META_ENCRYPTED,   $meta)   &&
-			    array_key_exists(META_IV,          $meta)) {
-				// check if we need to generate the password hash
-				$iterations = 0;
-				switch ($header[HEADER_KEYFORMAT]) {
-					case HEADER_KEYFORMAT_HASH:
-						$iterations = 100000;
-						break;
+		if (is_array($header)                           &&
+		    is_array($meta)                             &&
+		    array_key_exists(HEADER_CIPHER,    $header) &&
+		    array_key_exists(HEADER_ENCODING,  $header) &&
+		    array_key_exists(HEADER_KEYFORMAT, $header) &&
+		    array_key_exists(META_ENCRYPTED,   $meta)   &&
+		    array_key_exists(META_IV,          $meta)) {
+			// check if we need to generate the password hash
+			$iterations = 0;
+			switch ($header[HEADER_KEYFORMAT]) {
+				case HEADER_KEYFORMAT_HASH:
+					$iterations = 100000;
+					break;
 
-					case HEADER_KEYFORMAT_HASH2:
-						$iterations = 600000;
-						break;
-				}
+				case HEADER_KEYFORMAT_HASH2:
+					$iterations = 600000;
+					break;
+			}
 
-				// iterate over the potential combinations
-				foreach (INSTANCEID as $instanceid) {
-					foreach (SECRET as $secret) {
-						// create a working copy of the password
-						$pass = $password;
+			// iterate over the potential combinations
+			foreach (INSTANCEID as $instanceid) {
+				foreach (SECRET as $secret) {
+					// create a working copy of the password
+					$pass = $password;
 
-						// if we need to generate the password then do it via PBKDF2 that matches the
-						// required key length for the given cipher and the chosen iterations count
-						if (0 < $iterations) {
-							// required before PHP 8.2
-							$salt = hash("sha256", $keyid.$instanceid.$secret, true);
-							if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
-								$pass = hash_pbkdf2("sha256",
-								                    $pass,
-								                    $salt,
-								                    $iterations,
-								                    CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
-								                    true);
-							}
-
-							// usable starting with PHP 8.2
-							// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
-							// 	$pass = hash_pbkdf2("sha256",
-							// 	                    $pass,
-							// 	                    $salt,
-							// 	                    $iterations,
-							// 	                    openssl_cipher_key_length($header[HEADER_CIPHER]),
-							// 	                    true);
-							// }
+					// if we need to generate the password then do it via PBKDF2 that matches the
+					// required key length for the given cipher and the chosen iterations count
+					if (0 < $iterations) {
+						// required before PHP 8.2
+						$salt = hash("sha256", $keyid.$instanceid.$secret, true);
+						if ((false !== $salt) && array_key_exists(strtoupper($header[HEADER_CIPHER]), CIPHER_SUPPORT)) {
+							$pass = hash_pbkdf2("sha256",
+							                    $pass,
+							                    $salt,
+							                    $iterations,
+							                    CIPHER_SUPPORT[strtoupper($header[HEADER_CIPHER])],
+							                    true);
 						}
 
-						$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
-						                              $header[HEADER_CIPHER],
-						                              $pass,
-						                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
-						                              $meta[META_IV]);
-						if (false !== $privatekey) {
-							$res = openssl_pkey_get_private($privatekey);
-							if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
-								$sslInfo = openssl_pkey_get_details($res);
-								if (array_key_exists("key", $sslInfo)) {
-									$result = $privatekey;
-								}
-							} else {
-								debug("decrypted content is not a privatekey");
+						// usable starting with PHP 8.2
+						// if ((false !== $salt) && (false !== openssl_cipher_key_length($header[HEADER_CIPHER]))) {
+						// 	$pass = hash_pbkdf2("sha256",
+						// 	                    $pass,
+						// 	                    $salt,
+						// 	                    $iterations,
+						// 	                    openssl_cipher_key_length($header[HEADER_CIPHER]),
+						// 	                    true);
+						// }
+					}
+
+					$privatekey = openssl_decrypt($meta[META_ENCRYPTED],
+					                              $header[HEADER_CIPHER],
+					                              $pass,
+					                              (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
+					                              $meta[META_IV]);
+					if (false !== $privatekey) {
+						$res = openssl_pkey_get_private($privatekey);
+						if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
+							$sslInfo = openssl_pkey_get_details($res);
+							if (array_key_exists("key", $sslInfo)) {
+								$result = $privatekey;
 							}
 						} else {
-							debug("privatekey could not be decrypted: ".openssl_error_string());
+							debug("decrypted content is not a privatekey");
 						}
-
-						// exit the loop
-						if (false !== $result) {
-							break;
-						}
+					} else {
+						debug("privatekey could not be decrypted: ".openssl_error_string());
 					}
 
 					// exit the loop
@@ -586,7 +589,14 @@
 						break;
 					}
 				}
+
+				// exit the loop
+				if (false !== $result) {
+					break;
+				}
 			}
+		} else {
+			debug("privatekey file has wrong structure");
 		}
 
 		return $result;
