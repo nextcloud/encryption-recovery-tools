@@ -522,7 +522,7 @@ config("DEBUG_MODE_VERBOSE", true);
 
 		$files = searchMetaData();
 		foreach ($files as $filename) {
-			$file = file_get_contents_try_json($filename);
+			$file = file_get_contents($filename);
 			if (false !== $file) {
 				$metadate = decryptMetaDate($file, $privatekeys);
 				if (false !== $metadate) {
@@ -609,7 +609,7 @@ config("DEBUG_MODE_VERBOSE", true);
 		$keys = array_merge(searchSystemKeys(),
 		                    searchUserKeys());
 		foreach ($keys as $key) {
-			$file = file_get_contents_try_json($key[KEY_FILE]);
+			$file = file_get_contents($key[KEY_FILE]);
 			if (false !== $file) {
 				foreach ($key[KEY_MNEMONICS] as $mnemonic) {
 					$privatekey = decryptPrivateKey($file, $mnemonic);
