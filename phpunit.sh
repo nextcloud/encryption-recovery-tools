@@ -50,6 +50,6 @@ fi
 # print an empty line to separate the phpunit output optically
 echo
 
-# execute phpunit
-XDEBUG_MODE=coverage phpunit -c ./phpunit.xml --coverage-text
+# execute phpunit for the server-side-encryption
+XDEBUG_MODE=coverage phpunit -c ./phpunit.xml --coverage-text --testsuite server-side-encryption
 
