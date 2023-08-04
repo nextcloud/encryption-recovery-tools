@@ -373,7 +373,7 @@ config("DEBUG_MODE_VERBOSE", true);
 							// afterwards mix the adder into tmpkey,
 							// do this in constant time
 							$shifted = 0x00;
-							for ($byte = 0; $byte < strlen($tmpkey); $byte++) {
+							for ($byte = 0x00; $byte < strlen($tmpkey); $byte++) {
 								$tmpval        = (ord($tmpkey[$byte]) & 0x01);
 								$tmpkey[$byte] = chr((($shifted << 0x07) & 0x80) | ((ord($tmpkey[$byte]) >> 0x01) & 0x7F));
 								$shifted       = $tmpval;
