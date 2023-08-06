@@ -5,7 +5,7 @@ final class debug extends PHPUnit\Framework\TestCase
 		define("TESTING",    true);
 		define("DEBUG_MODE", false);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		self::expectOutputString("");
 		debug("test");
@@ -15,7 +15,7 @@ final class debug extends PHPUnit\Framework\TestCase
 		define("TESTING",    true);
 		define("DEBUG_MODE", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		self::expectOutputString("DEBUG: test".PHP_EOL);
 		debug("test");

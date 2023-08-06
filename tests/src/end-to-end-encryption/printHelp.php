@@ -1,7 +1,7 @@
 <?php
 final class printHelp extends PHPUnit\Framework\TestCase {
 	protected static function get_help_text() {
-		$source = file(__DIR__."/../../../server-side-encryption/recover.php", FILE_IGNORE_NEW_LINES);
+		$source = file(__DIR__."/../../../end-to-end-encryption/recover.php", FILE_IGNORE_NEW_LINES);
 
 		// remove the shebang
 		array_shift($source);
@@ -30,7 +30,7 @@ final class printHelp extends PHPUnit\Framework\TestCase {
 	public function test() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		// check if the output is as expected
 		ob_start();
@@ -49,7 +49,7 @@ final class printHelp extends PHPUnit\Framework\TestCase {
 	public function test_no_args() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		// check if the output is as expected
 		ob_start();
@@ -68,7 +68,7 @@ final class printHelp extends PHPUnit\Framework\TestCase {
 	public function test_h_arg() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		// check if the output is as expected
 		ob_start();
@@ -87,7 +87,7 @@ final class printHelp extends PHPUnit\Framework\TestCase {
 	public function test_help_arg() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		// check if the output is as expected
 		ob_start();

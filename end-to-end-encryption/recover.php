@@ -36,14 +36,6 @@
 	#                         this directory has to exist and contain the typical file
 	#                         structure of Nextcloud
 	#
-	# INSTANCEID              this is a value from the Nextcloud configuration file,
-	# (REQUIRED)              there does not seem to be another way to retrieve this
-	#                         value
-	#
-	# SECRET                  this is a value from the Nextcloud configuration file,
-	# (REQUIRED)              there does not seem to be another way to retrieve this
-	#                         value
-	#
 	# USER_MNEMONICS          these are the mnemonics for the user keys that have been
 	# (REQUIRED)              set by the Nextcloud client when creating the end-to-end
 	#                         encryption keys of the users, each value represents a
@@ -141,13 +133,11 @@
 	// ===== USER CONFIGURATION =====
 
 	// nextcloud definitions - you can get these values from `config/config.php`
-	config("DATADIRECTORY", "~/github/encryption-recovery-tools/tests/data/end-to-end-encryption/e2e/data/");
-	config("INSTANCEID",    "ocv57gqqtmlg");
-	config("SECRET",        "z14f8YV8qL0v+mUMo6EGUVhbWYarZWSys7Xc0qpEUJDGixcW");
+#	config("DATADIRECTORY", "~/github/encryption-recovery-tools/tests/data/end-to-end-encryption/e2e/data/");
 
-config("USER_MNEMONICS", ["admin" => "member arm belt cute depend pull borrow rigid thank humble space illness"]);
-config("DEBUG_MODE", true);
-config("DEBUG_MODE_VERBOSE", true);
+#config("USER_MNEMONICS", ["admin" => "member arm belt cute depend pull borrow rigid thank humble space illness"]);
+#config("DEBUG_MODE", true);
+#config("DEBUG_MODE_VERBOSE", true);
 
 	// user password definition,
 	// replace "username" with the actual usernames and "password" with the actual passwords,
@@ -216,7 +206,7 @@ config("DEBUG_MODE_VERBOSE", true);
 	function config($key, $value) {
 		if (!defined($key)) {
 			// overwrite config with environment variable if it is set
-			if (getenv($key)) {
+			if (false !== getenv($key)) {
 				// handle specific environment variables differently
 				switch ($key) {
 					// handle as arrays
@@ -236,12 +226,6 @@ config("DEBUG_MODE_VERBOSE", true);
 					case "DEBUG_MODE":
 					case "DEBUG_MODE_VERBOSE":
 						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
-						break;
-
-					// handle strings that could be an array
-					case "INSTANCEID":
-					case "SECRET":
-						$value = explode(" ", getenv($key));
 						break;
 
 					// handle user mnemonics specifically
@@ -275,13 +259,6 @@ config("DEBUG_MODE_VERBOSE", true);
 				case "EXTERNAL_STORAGES":
 					foreach ($value as $name => $path) {
 						$value[$name] = normalizePath($path);
-					}
-					break;
-
-				case "INSTANCEID":
-				case "SECRET":
-					if (!is_array($value)) {
-						$value = [$value];
 					}
 					break;
 
@@ -412,8 +389,6 @@ config("DEBUG_MODE_VERBOSE", true);
 			debug("DEBUG_MODE = ".var_export(DEBUG_MODE, true));
 			debug("DEBUG_MODE_VERBOSE = ".var_export(DEBUG_MODE_VERBOSE, true));
 			debug("EXTERNAL_STORAGES = ".var_export(EXTERNAL_STORAGES, true));
-			debug("INSTANCEID = ".var_export(INSTANCEID, true));
-			debug("SECRET = ".var_export(SECRET, true));
 			debug("USER_MNEMONICS = ".var_export(USER_MNEMONICS, true));
 		}
 	}
@@ -817,8 +792,6 @@ config("DEBUG_MODE_VERBOSE", true);
 	function prepareConfig() {
 		// nextcloud definitions
 		config("DATADIRECTORY", getcwd());
-		config("INSTANCEID",    []);
-		config("SECRET",        []);
 
 		// user mnemonic definition
 		config("USER_MNEMONICS", []);
@@ -954,15 +927,20 @@ config("DEBUG_MODE_VERBOSE", true);
 	function searchMetaData() {
 		$result = [];
 
-		foreach (INSTANCEID as $instanceid) {
-			// potential metadata path
-			$metadatapath = normalizePath(DATADIRECTORY."/appdata_".$instanceid."/end_to_end_encryption/meta-data/");
+		$folderlist = recursiveScandir(DATADIRECTORY, false);
+		foreach ($folderlist as $foldername) {
+			if (is_dir($foldername)) {
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/appdata_[0-9A-Za-z]+$@", $foldername)) {
+					// potential metadata path
+					$metadatapath = normalizePath($foldername."/end_to_end_encryption/meta-data/");
 
-			$filelist = recursiveScandir($metadatapath, true);
-			foreach ($filelist as $filename) {
-				if (is_file($filename)) {
-					if (1 === preg_match("@^".preg_quote($metadatapath, "@")."/.+/meta\.data$@", $filename)) {
-						$result[] = $filename;
+					$filelist = recursiveScandir($metadatapath, true);
+					foreach ($filelist as $filename) {
+						if (is_file($filename)) {
+							if (1 === preg_match("@^".preg_quote($metadatapath, "@")."/.+/meta\.data$@", $filename)) {
+								$result[] = $filename;
+							}
+						}
 					}
 				}
 			}
@@ -986,18 +964,23 @@ config("DEBUG_MODE_VERBOSE", true);
 	function searchUserKeys() {
 		$result = [];
 
-		foreach (INSTANCEID as $instanceid) {
-			// potential key path
-			$keypath = normalizePath(DATADIRECTORY."/appdata_".$instanceid."/end_to_end_encryption/private-keys/");
+		$folderlist = recursiveScandir(DATADIRECTORY, false);
+		foreach ($folderlist as $foldername) {
+			if (is_dir($foldername)) {  
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/appdata_[0-9a-z]+$@", $foldername)) {
+					// potential key path
+					$keypath = normalizePath($foldername."/end_to_end_encryption/private-keys/");
 
-			$filelist = recursiveScandir($keypath, false);
-			foreach ($filelist as $filename) {
-				if (is_file($filename)) {
-					if (1 === preg_match("@^".preg_quote($keypath, "@")."/(?<username>[0-9A-Za-z\.\-\_\@]+)\.private\.key$@", $filename, $matches)) {
-						if (array_key_exists(strtolower($matches["username"]), USER_MNEMONICS)) {
-							$result[] = [KEY_FILE      => $filename,
-							             KEY_MNEMONICS => USER_MNEMONICS[strtolower($matches["username"])],
-							             KEY_NAME      => $matches["username"]];
+					$filelist = recursiveScandir($keypath, false);
+					foreach ($filelist as $filename) {
+						if (is_file($filename)) {
+							if (1 === preg_match("@^".preg_quote($keypath, "@")."/(?<username>[0-9A-Za-z\.\-\_\@]+)\.private\.key$@", $filename, $matches)) {
+								if (array_key_exists(strtolower($matches["username"]), USER_MNEMONICS)) {
+									$result[] = [KEY_FILE      => $filename,
+									             KEY_MNEMONICS => USER_MNEMONICS[strtolower($matches["username"])],
+									             KEY_NAME      => $matches["username"]];
+								}
+							}
 						}
 					}
 				}

@@ -8,12 +8,12 @@ An inherited test looks like this:
 // use prepared test setup
 include_once(__DIR__."/main.php");
 
-final class <classname> extends main
-{
+final class <classname> extends main {
 	const EXTERNAL_STORAGES = [];
 	const INSTANCEID        = "";
 	const RECOVERY_PASSWORD = "recovery";
 	const SECRET            = "";
+	const SOURCEPATHS       = [];
 	const USER_PASSWORDS    = ["admin" => "admin"];
 	const VERSION           = "";
 }
@@ -22,10 +22,9 @@ final class <classname> extends main
 
 */
 
-class main extends PHPUnit\Framework\TestCase
-{
+class main extends PHPUnit\Framework\TestCase {
 	// set this to true to debug problems
-	const SHOW_OUTPUT=false;
+	const SHOW_OUTPUT = false;
 
 	protected static function array_to_env($array) {
 		$result = [];
@@ -87,6 +86,14 @@ class main extends PHPUnit\Framework\TestCase
 		return $directory."/".$file;
 	}
 
+	protected static function prepare_sourcepaths($sourcepaths) {
+		foreach ($sourcepaths as $key => $value) {
+			$sourcepaths[$key] = normalizePath(getenv("DATADIRECTORY")."/".$value);
+		}
+
+		return $sourcepaths;
+	}
+
 	protected static function wrong_passwords($user_passwords) {
 		$result = "";
 
@@ -129,7 +136,7 @@ class main extends PHPUnit\Framework\TestCase
 			if (!static::SHOW_OUTPUT) {
 				ob_start();
 			}
-			$result = main([__FILE__, __DIR__."/../../tmp/"]);
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
 			if (!static::SHOW_OUTPUT) {
 				ob_end_clean();
 			}
@@ -160,7 +167,7 @@ class main extends PHPUnit\Framework\TestCase
 			if (!static::SHOW_OUTPUT) {
 				ob_start();
 			}
-			$result = main([__FILE__, __DIR__."/../../tmp/"]);
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
 			if (!static::SHOW_OUTPUT) {
 				ob_end_clean();
 			}
@@ -191,7 +198,7 @@ class main extends PHPUnit\Framework\TestCase
 			if (!static::SHOW_OUTPUT) {
 				ob_start();
 			}
-			$result = main([__FILE__, __DIR__."/../../tmp/"]);
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
 			if (!static::SHOW_OUTPUT) {
 				ob_end_clean();
 			}
@@ -222,7 +229,7 @@ class main extends PHPUnit\Framework\TestCase
 			if (!static::SHOW_OUTPUT) {
 				ob_start();
 			}
-			$result = main([__FILE__, __DIR__."/../../tmp/"]);
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
 			if (!static::SHOW_OUTPUT) {
 				ob_end_clean();
 			}
@@ -253,7 +260,7 @@ class main extends PHPUnit\Framework\TestCase
 			if (!static::SHOW_OUTPUT) {
 				ob_start();
 			}
-			$result = main([__FILE__, __DIR__."/../../tmp/"]);
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
 			if (!static::SHOW_OUTPUT) {
 				ob_end_clean();
 			}

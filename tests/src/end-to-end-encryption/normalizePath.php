@@ -4,7 +4,7 @@ final class normalizePath extends PHPUnit\Framework\TestCase
 	public function test_false() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		self::assertSame(getcwd(),                                               normalizePath("",               false));
 		self::assertSame("/",                                                    normalizePath("/",              false));
@@ -54,7 +54,7 @@ final class normalizePath extends PHPUnit\Framework\TestCase
 	public function test_true() {
 		define("TESTING", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		self::assertSame(getcwd()."/",                                            normalizePath("",               true));
 		self::assertSame("/",                                                     normalizePath("/",              true));

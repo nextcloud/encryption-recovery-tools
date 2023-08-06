@@ -36,15 +36,16 @@
 	#                         this directory has to exist and contain the typical file
 	#                         structure of Nextcloud
 	#
-	# INSTANCEID              this is a value from the Nextcloud configuration file,
+	# SECRET                  this is a value from the Nextcloud configuration file,
 	# (REQUIRED)              there does not seem to be another way to retrieve this
 	#                         value, you can provide an array of values if you are
 	#                         uncertain which value is correct and all of them will
 	#                         be tried out
 	#
-	# SECRET                  this is a value from the Nextcloud configuration file,
-	# (REQUIRED)              there does not seem to be another way to retrieve this
-	#                         value, you can provide an array of values if you are
+	# INSTANCEID              this is a value from the Nextcloud configuration file,
+	# (OPTIONAL)              if no value is provided then the script will try to
+	#                         guess the correct value based on the existing "appdata"
+	#                         folders, you can provide an array of values if you are
 	#                         uncertain which value is correct and all of them will
 	#                         be tried out
 	#
@@ -178,8 +179,10 @@
 
 	// nextcloud definitions - you can get these values from `config/config.php`
 	config("DATADIRECTORY", "");
-	config("INSTANCEID",    "");
 	config("SECRET",        "");
+
+	// instanceid definition
+	// config("INSTANCEID", "");
 
 	// recovery password definition
 	// config("RECOVERY_PASSWORD", "");
@@ -277,29 +280,13 @@
 	config("META_PADDING_TAG_SHORT", "xx");
 	config("META_SIGNATURE_TAG",     "00sig00");
 
-	// define as a constant to speed up decryptions
-	config("REPLACE_RC4", checkReplaceRC4());
-
 	// ===== HELPER FUNCTIONS =====
-
-	// check if we have to use our own RC4 implementation
-	function checkReplaceRC4() {
-		// with OpenSSL v3 we assume that we have to replace the RC4 algo
-		$result = (OPENSSL_VERSION_NUMBER >= 0x30000000);
-
-		if ($result) {
-			// maybe someone has re-enabled the legacy support in OpenSSL v3
-			$result = (false === openssl_encrypt("test", "rc4", "test", OPENSSL_RAW_DATA, "", $tag, "", 0));
-		}
-
-		return $result;
-	}
 
 	// only define a constant if it does not exist
 	function config($key, $value) {
 		if (!defined($key)) {
 			// overwrite config with environment variable if it is set
-			if (getenv($key)) {
+			if (false !== getenv($key)) {
 				// handle specific environment variables differently
 				switch ($key) {
 					// handle as arrays
@@ -319,13 +306,19 @@
 					// handle as booleans
 					case "DEBUG_MODE":
 					case "DEBUG_MODE_VERBOSE":
-					case "REPLACE_RC4":
 					case "SUPPORT_MISSING_HEADERS":
 						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
 						break;
 
-					// handle strings that could be an array
+					// handle instanceid specifically
 					case "INSTANCEID":
+						$value = explode(" ", getenv($key));
+						if ((1 === count($value)) && (0 === strlen($value[0]))) {
+							$value = null;
+						}
+						break;
+
+					// handle strings that could be an array
 					case "RECOVERY_PASSWORD":
 					case "SECRET":
 						$value = explode(" ", getenv($key));
@@ -366,6 +359,13 @@
 					break;
 
 				case "INSTANCEID":
+					if (null === $value) {
+						$value = searchInstanceIDs();
+					} elseif (!is_array($value)) {
+						$value = [$value];
+					}
+					break;
+
 				case "RECOVERY_PASSWORD":
 				case "SECRET":
 					if (!is_array($value)) {
@@ -637,27 +637,33 @@
 			foreach ($sharekeynames as $sharekeyname) {
 				$sharekey = file_get_contents_try_json($sharekeyname);
 				if (false !== $sharekey) {
-					// try to decrypt legacy file key first
-					foreach ($filekeys as $filekeyname) {
-						$filekey = file_get_contents_try_json($filekeyname);
-						if (false !== $filekey) {
-							if (wrapped_openssl_open($filekey,
-							                         $tmpkey,
-							                         $sharekey,
-							                         $privatekeys[$keyname],
-							                         "rc4")) {
-								$result = $tmpkey;
+					// try to decrypt the sharekey
+					if (openssl_private_decrypt($sharekey,
+					                            $intermediate,
+					                            $privatekeys[$keyname],
+					                            OPENSSL_PKCS1_PADDING)) {
+						// try to decrypt legacy file key first
+						foreach ($filekeys as $filekeyname) {
+							$filekey = file_get_contents_try_json($filekeyname);
+							if (false !== $filekey) {
+								$tmpkey = rc4($filekey, $intermediate);
+								if (false !== $tmpkey) {
+									$result = $tmpkey;
+								} else {
+									debug("secretkey could not be decrypted from legacy file key...");
+								}
 							} else {
-								debug("secretkey could not be decrypted from legacy file key...");
+								debug("filekey could not be read from file...");
 							}
-						} else {
-							debug("filekey could not be read from file...");
-						}
 
-						// exit the loop
-						if (null !== $result) {
-							break;
+							// exit the loop
+							if (null !== $result) {
+								break;
+							}
 						}
+					} else {
+						debug("openssl_private_decrypt() failed: ".openssl_error_string());
+						debug("sharekey could not be decrypted as intermediate key...");
 					}
 
 					// try to decrypt the new share key second,
@@ -670,7 +676,7 @@
 							$result = $tmpkey;
 						} else {
 							debug("openssl_private_decrypt() failed: ".openssl_error_string());
-							debug("secretkey could not be decrypted...");
+							debug("sharekey could not be decrypted as secret key...");
 						}
 					}
 				} else {
@@ -1001,8 +1007,12 @@
 	function prepareConfig() {
 		// nextcloud definitions
 		config("DATADIRECTORY", getcwd());
-		config("INSTANCEID",    []);
 		config("SECRET",        []);
+
+		// instanceid definition,
+		// will populate the value with the
+		// result from searchInstanceIDs()
+		config("INSTANCEID", null);
 
 		// recovery password definition
 		config("RECOVERY_PASSWORD", []);
@@ -1236,6 +1246,22 @@
 		return $result;
 	}
 
+	// search for appdata folders to identify instanceids
+	function searchInstanceIDs() {
+		$result = [];
+
+		$folderlist = recursiveScandir(DATADIRECTORY, false);
+		foreach ($folderlist as $foldername) {
+			if (is_dir($foldername)) {
+				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/appdata_(?<instanceid>[0-9A-Za-z]+)$@", $foldername, $matches)) {
+					$result[] = $matches["instanceid"];
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	// test different filename structures for the sharekey
 	function searchShareKeys($parsed, $keynames) {
 		$result = [];
@@ -1385,38 +1411,6 @@
 		// check if it makes sense to shorten the string
 		if ((strlen($result) > $length) && (strlen($filler) < $length)) {
 			$result = substr_replace($result, $filler, ceil($length - strlen($filler)) / 2, -floor(($length - strlen($filler)) / 2));
-		}
-
-		return $result;
-	}
-
-	// try to do an RC4 openssl_open() but fall back to our custom implementation if needed
-	function wrapped_openssl_open($data, &$output, $encrypted_key, $private_key, $cipher_algo, $iv = null) {
-		$result = false;
-
-		if ((0 === strcasecmp($cipher_algo, "rc4")) && REPLACE_RC4) {
-			if (openssl_private_decrypt($encrypted_key,
-			                            $intermediate,
-			                            $private_key,
-			                            OPENSSL_PKCS1_PADDING)) {
-				$output = rc4($data, $intermediate);
-				$result = (false !== $output);
-				if (!$result) {
-					debug("rc4() failed");
-				}
-			} else {
-				debug("openssl_private_decrypt() failed: ".openssl_error_string());
-			}
-		} else {
-			$result = openssl_open($data,
-			                       $output,
-			                       $encrypted_key,
-			                       $private_key,
-			                       $cipher_algo,
-			                       $iv);
-			if (!$result) {
-				debug("openssl_open() failed: ".openssl_error_string());
-			}
 		}
 
 		return $result;

@@ -1,6 +1,5 @@
 <?php
-final class rc4 extends PHPUnit\Framework\TestCase
-{
+final class rc4 extends PHPUnit\Framework\TestCase {
 	public function test_decrypt() {
 		define("TESTING", true);
 

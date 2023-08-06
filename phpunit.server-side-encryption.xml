@@ -25,16 +25,11 @@
 
   <source>
     <include>
-      <file>end-to-end-encryption/recover.php</file>
       <file>server-side-encryption/recover.php</file>
     </include>
   </source>
 
   <testsuites>
-    <testsuite name="end-to-end-encryption">
-      <directory suffix=".php">tests/src/end-to-end-encryption</directory>
-      <exclude>./tests/src/end-to-end-encryption/main.php</exclude>
-    </testsuite>
     <testsuite name="server-side-encryption">
       <directory suffix=".php">tests/src/server-side-encryption</directory>
       <exclude>./tests/src/server-side-encryption/main.php</exclude>

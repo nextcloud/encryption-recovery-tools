@@ -1,6 +1,5 @@
 <?php
-final class prepareConfig extends PHPUnit\Framework\TestCase
-{
+final class prepareConfig extends PHPUnit\Framework\TestCase {
 	public function test() {
 		define("TESTING", true);
 
@@ -49,6 +48,5 @@ final class prepareConfig extends PHPUnit\Framework\TestCase
 		self::assertTrue(defined("META_PADDING_TAG_LONG"));
 		self::assertTrue(defined("META_PADDING_TAG_SHORT"));
 		self::assertTrue(defined("META_SIGNATURE_TAG"));
-		self::assertTrue(defined("REPLACE_RC4"));
 	}
 }

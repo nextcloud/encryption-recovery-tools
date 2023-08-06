@@ -33,8 +33,43 @@ then
   exit 4
 fi
 
+# execute phpunit for the end-to-end encryption
+echo "===== END-TO-END ENCRYPTION ====="
+echo
+
 # check if the test data repository has been checked out
-echo "Preparing the test data, this could take a while..."
+#echo "Preparing the test data for the end-to-end encryption, this could take a while..."
+#if [[ -d ./tests/data/end-to-end-encryption ]]
+#then
+#  git -C ./tests/data/end-to-end-encryption pull >/dev/null 2>&1
+#else
+#  git clone https://github.com/nextcloud/end-to-end-encryption-testdata ./tests/data/end-to-end-encryption >/dev/null 2>&1
+#fi
+#if [[ "$?" -ne "0" ]]
+#then
+#  echo "ERROR: Preparing the test data for the end-to-end encryption failed." >&2
+#  exit 5
+#fi
+
+# separate output
+echo
+
+XDEBUG_MODE=coverage phpunit -c ./phpunit.end-to-end-encryption.xml --coverage-html ./tests/cache/end-to-end-encryption/ --coverage-text
+TEMP="$?"
+
+# only proceed if no errors occured
+if [[ "$TEMP" -ne "0" ]]
+then
+  echo "ERROR: error durring phpunit run for the end-to-end encryption" >&2
+  exit "$TEMP"
+fi
+
+# execute phpunit for the server-side encryption
+echo "===== SERVER-SIDE ENCRYPTION ====="
+echo
+
+# check if the test data repository has been checked out
+echo "Preparing the test data for the server-side encryption, this could take a while..."
 if [[ -d ./tests/data/server-side-encryption ]]
 then
   git -C ./tests/data/server-side-encryption pull >/dev/null 2>&1
@@ -43,13 +78,19 @@ else
 fi
 if [[ "$?" -ne "0" ]]
 then
-  echo "ERROR: Preparing the test data failed." >&2
-  exit 5
+  echo "ERROR: Preparing the test data for the server-side encryption failed." >&2
+  exit 6
 fi
 
-# print an empty line to separate the phpunit output optically
+# separate output
 echo
 
-# execute phpunit for the server-side-encryption
-XDEBUG_MODE=coverage phpunit -c ./phpunit.xml --coverage-text --testsuite server-side-encryption
+XDEBUG_MODE=coverage phpunit -c ./phpunit.server-side-encryption.xml --coverage-html ./tests/cache/server-side-encryption/ --coverage-text
+TEMP="$?"
 
+# only proceed if no errors occured
+if [[ "$TEMP" -ne "0" ]]
+then
+  echo "ERROR: error durring phpunit run for the server-side encryption" >&2
+  exit "$TEMP"
+fi

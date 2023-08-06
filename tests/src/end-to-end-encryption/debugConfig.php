@@ -5,11 +5,7 @@ final class debugConfig extends PHPUnit\Framework\TestCase {
 		       "DEBUG: DEBUG_MODE = true".PHP_EOL.
 		       "DEBUG: DEBUG_MODE_VERBOSE = true".PHP_EOL.
 		       "DEBUG: EXTERNAL_STORAGES = ".var_export([], true).PHP_EOL.
-		       "DEBUG: INSTANCEID = ".var_export([], true).PHP_EOL.
-		       "DEBUG: RECOVERY_PASSWORD = ".var_export([], true).PHP_EOL.
-		       "DEBUG: SECRET = ".var_export([""], true).PHP_EOL.
-		       "DEBUG: SUPPORT_MISSING_HEADERS = false".PHP_EOL.
-		       "DEBUG: USER_PASSWORDS = ".var_export([], true).PHP_EOL;
+		       "DEBUG: USER_MNEMONICS = ".var_export(["username" => ["mnemonic"]], true).PHP_EOL;
 	}
 
 	public function test_false() {
@@ -17,7 +13,7 @@ final class debugConfig extends PHPUnit\Framework\TestCase {
 		define("DEBUG_MODE",         true);
 		define("DEBUG_MODE_VERBOSE", false);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		prepareConfig();
 		self::expectOutputString("");
@@ -29,7 +25,7 @@ final class debugConfig extends PHPUnit\Framework\TestCase {
 		define("DEBUG_MODE",         true);
 		define("DEBUG_MODE_VERBOSE", true);
 
-		include(__DIR__."/../../../server-side-encryption/recover.php");
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
 
 		prepareConfig();
 		self::expectOutputString(self::generateTestOutput());
