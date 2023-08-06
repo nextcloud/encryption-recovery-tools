@@ -1366,7 +1366,7 @@
 		return $result;
 	}
 
-	// do not execute main() when we in TESTING mode
+	// do not execute main() when we are in TESTING mode
 	if ((!defined("TESTING")) && (!getenv("TESTING"))) {
 		// main entrypoint
 		exit(main($argv));
