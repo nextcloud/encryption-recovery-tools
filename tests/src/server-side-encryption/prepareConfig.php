@@ -9,8 +9,8 @@ final class prepareConfig extends PHPUnit\Framework\TestCase {
 
 		// test user configuration
 		self::assertTrue(defined("DATADIRECTORY"));
-		self::assertTrue(defined("INSTANCEID"));
 		self::assertTrue(defined("SECRET"));
+		self::assertTrue(defined("INSTANCEID"));
 		self::assertTrue(defined("RECOVERY_PASSWORD"));
 		self::assertTrue(defined("USER_PASSWORDS"));
 		self::assertTrue(defined("EXTERNAL_STORAGES"));
@@ -21,8 +21,18 @@ final class prepareConfig extends PHPUnit\Framework\TestCase {
 		// test system definitions
 		self::assertTrue(defined("BLOCKSIZE"));
 		self::assertTrue(defined("CIPHER_SUPPORT"));
+		self::assertTrue(defined("DECRYPTION_INFIX"));
 		self::assertTrue(defined("ENCRYPTION_INFIX"));
+		self::assertTrue(defined("ENCRYPTION_SUFFIX"));
 		self::assertTrue(defined("EXTERNAL_PREFIX"));
+		self::assertTrue(defined("FILE_FILE"));
+		self::assertTrue(defined("FILE_NAME"));
+		self::assertTrue(defined("FILE_NAME_RAW"));
+		self::assertTrue(defined("FILE_TRASHBIN"));
+		self::assertTrue(defined("FILE_TRASHBIN_TIME"));
+		self::assertTrue(defined("FILE_USERNAME"));
+		self::assertTrue(defined("FILE_VERSION"));
+		self::assertTrue(defined("FILE_VERSION_TIME"));
 		self::assertTrue(defined("HEADER_BEGIN"));
 		self::assertTrue(defined("HEADER_CIPHER"));
 		self::assertTrue(defined("HEADER_END"));
@@ -41,6 +51,10 @@ final class prepareConfig extends PHPUnit\Framework\TestCase {
 		self::assertTrue(defined("HEADER_OC_ENCRYPTION_MODULE_DEFAULT"));
 		self::assertTrue(defined("HEADER_VALUE_FALSE"));
 		self::assertTrue(defined("HEADER_VALUE_TRUE"));
+		self::assertTrue(defined("KEY_FILE"));
+		self::assertTrue(defined("KEY_ID"));
+		self::assertTrue(defined("KEY_NAME"));
+		self::assertTrue(defined("KEY_PASSWORDS"));
 		self::assertTrue(defined("META_ENCRYPTED"));
 		self::assertTrue(defined("META_IV"));
 		self::assertTrue(defined("META_SIGNATURE"));
