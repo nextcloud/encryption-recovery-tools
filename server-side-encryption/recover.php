@@ -125,7 +125,7 @@
 	#
 	#          USER_PASSWORDS="user1=password1 user2=password2"
 	#
-	# It is possible to provide more than on password per user through USER_PASSWORDS
+	# It is possible to provide more than one password per user through USER_PASSWORDS
 	# in case you have several passwords and do not know which of them is correct.
 	# All of them will be tried out.
 	#

@@ -19,10 +19,7 @@
 	#
 	# This script can recover your precious files if you encrypted them with the
 	# Nextcloud End-to-End Encryption and still have access to the data directory
-	# and the Nextcloud configuration file (config/config.php). It supports the
-	# master-key encryption, the user-key encryption and can even use the rescue key
-	# if it had been enabled as well as the public sharing key for files that had been
-	# publicly shared.
+	# and the user mnemonics.
 	#
 	#
 	# configuration:
@@ -39,8 +36,10 @@
 	# USER_MNEMONICS          these are the mnemonics for the user keys that have been
 	# (REQUIRED)              set by the Nextcloud client when creating the end-to-end
 	#                         encryption keys of the users, each value represents a
-	#                         (username, password) pair and you can set as many pairs
-	#                         as necessary
+	#                         (username, mnemonic) pair and you can set as many pairs
+	#                         as necessary, you can provide an array of mnemonics per
+	#                         user if you are uncertain which mnemonic is correct and
+	#                         all of them will be tried out
 	#
 	#                         Example: if the username was "beispiel" and the mnemonic
 	#                                  of that user was "example" then the value has
@@ -93,6 +92,15 @@
 	#
 	#          USER_MNEMONICS="user1=mnemonic1 user2=mnemonic2"
 	#
+	# It is possible to provide more than one mnemonic per user through USER_MNEMONICS
+	# in case you have several mnemonicss and do not know which of them is correct.
+	# All of them will be tried out.
+	#
+	# Example: if two mnemonics for the same user shall be provided through an
+	#          environment variable then the corresponding value has to be set as:
+	#
+	#          USER_MNEMONICS="user=mnemonic1 user=mnemonic2"
+	#
 	#
 	# execution:
 	# ==========
@@ -122,10 +130,6 @@
 	# and on the number and size of your files. Make sure that the script is able to
 	# run without interruption. As of now it does not have a resume feature. On
 	# servers you can achieve this by starting the script within a screen session.
-	#
-	# Also, the script currently does not support the decryption of files in the
-	# trashbin that have been deleted from external storage as Nextcloud creates zero
-	# byte files when deleting such a file instead of copying over its actual content.
 	#
 	# Windows users: This script will not run on Windows. Please use the Windows
 	#                Subsystem for Linux instead.
