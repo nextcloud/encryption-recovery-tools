@@ -308,10 +308,10 @@
 
 		// check special case first
 		if (0x0C === strlen($iv)) {
-			$result = $iv.hex2bin("00000002");
+			$result = $iv."\x00\x00\x00\x02";
 		} else {
 			// produce GHASH of the nonce
-			$subkey = openssl_encrypt(hex2bin("00000000000000000000000000000000"),
+			$subkey = openssl_encrypt("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 			                          $algo,
 			                          $key,
 			                          OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
@@ -321,20 +321,20 @@
 
 				// pad iv to 128 bit block
 				if (0x00 !== ($ivlen % 0x10)) {
-					$iv = $iv.str_repeat(hex2bin("00"), 0x10 - ($ivlen % 0x10));
+					$iv = $iv.str_repeat("\x00", 0x10 - ($ivlen % 0x10));
 				}
 
 				// append zero padding
-				$iv = $iv.hex2bin("0000000000000000");
+				$iv = $iv."\x00\x00\x00\x00\x00\x00\x00\x00";
 
 				// append 64-bit iv length
-				$iv = $iv.hex2bin("00000000").pack("N", ($ivlen << 0x03));
+				$iv = $iv."\x00\x00\x00\x00".pack("N", ($ivlen << 0x03));
 
 				// actual GHASH calculation
-				$result = hex2bin("00000000000000000000000000000000");
+				$result = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 				for ($i = 0x00; $i < strlen($iv)/0x10; $i++) {
 					$block  = $result ^ substr($iv, $i * 0x10, 0x10);
-					$tmp    = hex2bin("00000000000000000000000000000000");
+					$tmp    = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 					$tmpkey = $subkey;
 
 					// execute the multipliation
