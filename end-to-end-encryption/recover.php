@@ -140,8 +140,8 @@
 #	config("DATADIRECTORY", "~/github/encryption-recovery-tools/tests/data/end-to-end-encryption/e2e/data/");
 
 #config("USER_MNEMONICS", ["admin" => "member arm belt cute depend pull borrow rigid thank humble space illness"]);
-#config("DEBUG_MODE", true);
-#config("DEBUG_MODE_VERBOSE", true);
+#config("DEBUG_MODE", false);
+#config("DEBUG_MODE_VERBOSE", false);
 
 	// user password definition,
 	// replace "username" with the actual usernames and "password" with the actual passwords,
@@ -189,6 +189,7 @@
 
 	// metadata entries
 	config("METADATA_CHECKSUM",    "checksum");
+	config("METADATA_DIRECTORY",   "httpd/unix-directory");
 	config("METADATA_ENCRYPTED",   "encrypted");
 	config("METADATA_FILENAME",    "filename");
 	config("METADATA_FILES",       "files");
@@ -308,7 +309,7 @@
 
 		// check special case first
 		if (0x0C === strlen($iv)) {
-			$result = $iv."\x00\x00\x00\x02";
+			$result = $iv."\x00\x00\x00\x01";
 		} else {
 			// produce GHASH of the nonce
 			$subkey = openssl_encrypt("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
@@ -365,15 +366,13 @@
 
 					$result = $tmp;
 				}
-
-				// add 0x01 to the result
-				$remainder = 0x01;
-				for ($index = strlen($result)-0x01; $index >= 0x00; $index--) {
-					$tmp            = (((ord($result[$index]) + $remainder) >> 0x08) & 0xFF);
-					$result[$index] = chr((ord($result[$index]) + $remainder) & 0xFF);
-					$remainder      = $tmp;
-				}
 			}
+		}
+
+		// we need to increment the counter once because we do not need
+		// the inital GCM block that is only used for the authentication tag
+		if (null !== $result) {
+			$result = incrementCounter($result);
 		}
 
 		return $result;
@@ -471,7 +470,27 @@
 							if (false !== $metadata) {
 								$metadata = base64_decode($metadata);
 								if (false !== $metadata) {
-									var_dump($metadata);
+									$metadata = json_decode($metadata,
+									                        true,
+									                        2,
+									                        JSON_OBJECT_AS_ARRAY);
+									if (is_array($metadata)) {
+										// merge the unencrypted and decrypted metadata
+										$result[$filename] = array_merge($file, $metadata);
+
+                                                                                // prepare metadata
+                                                                                if (array_key_exists(METADATA_IV, $result[$filename])) {
+                                                                                        $result[$filename][METADATA_IV] = base64_decode($result[$filename][METADATA_IV]);
+                                                                                }
+                                                                                if (array_key_exists(METADATA_KEY, $result[$filename])) {
+                                                                                        $result[$filename][METADATA_KEY] = base64_decode($result[$filename][METADATA_KEY]);
+                                                                                }
+                                                                                if (array_key_exists(METADATA_TAG, $result[$filename])) {
+                                                                                        $result[$filename][METADATA_TAG] = base64_decode($result[$filename][METADATA_TAG]);
+                                                                                }
+									} else {
+										debug("decrypted metadata are not JSON-encoded");
+									}
 								} else {
 									debug("decrypted metadata are not base64-encoded");
 								}
@@ -611,6 +630,24 @@
 		$pwuid = (null === $username) ? posix_getpwuid(posix_getuid()) : posix_getpwnam($username);
 		if (is_array($pwuid) && array_key_exists("dir", $pwuid)) {
 			$result = $pwuid["dir"];
+		}
+
+		return $result;
+	}
+
+	// increment a CTR counter
+	function incrementCounter($counter, $increment = 0x01) {
+		$result = $counter;
+
+		if (is_string($result)   &&
+		    (0x00 <= $increment) &&
+		    (0xFF >= $increment)) {
+			// add increment to the result
+			for ($index = strlen($result)-0x01; $index >= 0x00; $index--) {
+				$tmp            = (((ord($result[$index]) + $increment) >> 0x08) & 0xFF);
+				$result[$index] = chr((ord($result[$index]) + $increment) & 0xFF);
+				$increment      = $tmp;
+			}
 		}
 
 		return $result;
@@ -1012,37 +1049,103 @@
 
 	// ===== MAIN FUNCTIONS =====
 
-	// check if a file has a header and if not copy it to the target
+	// try to copy a file
 	function copyFile($filename, $targetname) {
-		$result = false;
-
 		// try to set file times later on
 		$fileatime = fileatime($filename);
 		$filemtime = filemtime($filename);
 
-		// we will not try to copy encrypted files
-		$isplain = false;
+		$result = copy($filename, $targetname);
 
-		$sourcefile = fopen($filename, "r");
-		try {
-			$buffer = "";
-			$tmp    = "";
-			do {
-				$tmp = fread($sourcefile, BLOCKSIZE);
-				if (false !== $tmp) {
-					$buffer .= $tmp;
-				}
-			} while ((BLOCKSIZE > strlen($buffer)) && (!feof($sourcefile)));
+		// try to set file times
+		if ($result && (false !== $filemtime)) {
+			// fix access time if necessary
+			if (false === $fileatime) {
+				$fileatime = time();
+			}
 
-			// check if the source file does not start with a header
-			$header  = parseHeader(substr($buffer, 0, BLOCKSIZE), false);
-			$isplain = (0 === count($header));
-		} finally {
-			fclose($sourcefile);
+			touch($targetname, $filemtime, $fileatime);
 		}
 
-		if ($isplain) {
-			$result = copy($filename, $targetname);
+		return $result;
+	}
+
+	// try to decrypt a file
+	function decryptFile($filename, $metadata, $targetname) {
+		$result = false;
+
+		if ((array_key_exists(METADATA_IV, $metadata)) &&
+		    (array_key_exists(METADATA_KEY, $metadata))) {
+			// try to set file times later on
+			$fileatime = fileatime($filename);
+			$filemtime = filemtime($filename);
+
+			$sourcefile = fopen($filename,   "r");
+			$targetfile = fopen($targetname, "w");
+			try {
+				$result = true;
+
+				$block  = "";
+				$buffer = "";
+				$iv     = convertGCMtoCTR($metadata[METADATA_IV], $metadata[METADATA_KEY], "aes-128-ecb");
+				$key    = $metadata[METADATA_KEY];
+				$plain  = "";
+				$tmp    = "";
+				do {
+					$tmp = fread($sourcefile, BLOCKSIZE);
+					if (false !== $tmp) {
+						$buffer .= $tmp;
+
+					while (BLOCKSIZE <= strlen($buffer)) {
+							$block  = substr($buffer, 0, BLOCKSIZE);
+							$buffer = substr($buffer, BLOCKSIZE);
+
+							$plain = openssl_decrypt($block,
+							                         "aes-128-ctr",
+							                         $key,
+							                         OPENSSL_RAW_DATA,
+							                         $iv);
+							if (false !== $plain) {
+								// write fails when fewer bytes than string length are written
+								$result = $result && (strlen($plain) === fwrite($targetfile, $plain));
+							} else {
+								// decryption failed
+								$result = false;
+							}
+
+							// increment counter,
+							// 16 = AES-128 block length
+							$iv = incrementCounter($iv, BLOCKSIZE/16);
+						}
+					}
+				} while (!feof($sourcefile));
+
+				// decrypt trailing blocks
+				while (0 < strlen($buffer)) {
+					$block  = substr($buffer, 0, BLOCKSIZE);
+					$buffer = substr($buffer, BLOCKSIZE);
+
+					$plain = openssl_decrypt($block,
+					                         "aes-128-ctr",
+					                         $key,
+					                         OPENSSL_RAW_DATA,
+					                         $iv);
+					if (false !== $plain) {
+						// write fails when fewer bytes than string length are written
+						$result = $result && (strlen($plain) === fwrite($targetfile, $plain));
+					} else {
+						// decryption failed
+						$result = false;
+					}
+
+					// increment counter,
+					// 16 = AES-128 block length
+					$iv = incrementCounter($iv, BLOCKSIZE/16);
+				}
+			} finally {
+				fclose($sourcefile);
+				fclose($targetfile);
+			}
 
 			// try to set file times
 			if ($result && (false !== $filemtime)) {
@@ -1053,117 +1156,6 @@
 
 				touch($targetname, $filemtime, $fileatime);
 			}
-		}
-
-		return $result;
-	}
-
-	// decrypt a single file block
-	function decryptBlock($header, $block, $secretkey) {
-		$result = false;
-
-		$meta = parseMetaData($block);
-
-		if (is_array($header) && is_array($meta)) {
-			if (array_key_exists(HEADER_CIPHER,   $header) &&
-			    array_key_exists(HEADER_ENCODING, $header) &&
-			    array_key_exists(META_ENCRYPTED,  $meta)   &&
-			    array_key_exists(META_IV,         $meta)) {
-				$output = openssl_decrypt($meta[META_ENCRYPTED],
-				                          $header[HEADER_CIPHER],
-				                          $secretkey,
-				                          (HEADER_ENCODING_BINARY === $header[HEADER_ENCODING]) ? OPENSSL_RAW_DATA : 0,
-				                          $meta[META_IV]);
-				if (false !== $output) {
-					$result = $output;
-				} else {
-					debug("block could not be decrypted: ".openssl_error_string());
-				}
-			}
-		}
-
-		return $result;
-	}
-
-	// try to decrypt a file
-	function decryptFile($filename, $secretkey, $targetname) {
-		$result = false;
-
-		// try to set file times later on
-		$fileatime = fileatime($filename);
-		$filemtime = filemtime($filename);
-
-		$sourcefile = fopen($filename,   "r");
-		$targetfile = fopen($targetname, "w");
-		try {
-			$result = true;
-
-			$block  = "";
-			$buffer = "";
-			$first  = true;
-			$header = null;
-			$plain  = "";
-			$tmp    = "";
-			do {
-				$tmp = fread($sourcefile, BLOCKSIZE);
-				if (false !== $tmp) {
-					$buffer .= $tmp;
-
-					while (BLOCKSIZE <= strlen($buffer)) {
-						$block  = substr($buffer, 0, BLOCKSIZE);
-						$buffer = substr($buffer, BLOCKSIZE);
-
-						// the first block contains the header
-						if ($first) {
-							$first  = false;
-							$header = parseHeader($block, SUPPORT_MISSING_HEADERS);
-						} else {
-							$plain = decryptBlock($header, $block, $secretkey);
-							if (false !== $plain) {
-								// write fails when fewer bytes than string length are written
-								$result = $result && (strlen($plain) === fwrite($targetfile, $plain));
-							} else {
-								// decryption failed
-								$result = false;
-							}
-						}
-					}
-				}
-			} while (!feof($sourcefile));
-
-			// decrypt trailing blocks
-			while (0 < strlen($buffer)) {
-				$block  = substr($buffer, 0, BLOCKSIZE);
-				$buffer = substr($buffer, BLOCKSIZE);
-
-				// the file only has 1 block, parsing the header before decryption
-				if ($first) {
-					$first  = false;
-					$header = parseHeader($block, SUPPORT_MISSING_HEADERS);
-				}
-
-				$plain = decryptBlock($header, $block, $secretkey);
-				if (false !== $plain) {
-					// write fails when fewer bytes than string length are written
-					$result = $result && (strlen($plain) === fwrite($targetfile, $plain));
-				} else {
-					// decryption failed
-					$result = false;
-				}
-			}
-		} finally {
-			fclose($sourcefile);
-			fclose($targetfile);
-		}
-
-		// try to set file times
-		if ($result && (false !== $filemtime)) {
-			// fix access time if necessary
-			if (false === $fileatime) {
-				$fileatime = time();
-			}
-
-			touch($targetname, $filemtime, $fileatime);
 		}
 
 		return $result;
@@ -1184,8 +1176,6 @@
 		if (0 >= count($metadata)) {
 			println("WARNING: COULD NOT DECRYPT ANY META DATA");
 		}
-
-/*
 
 		// collect all file sources
 		$sources = prepareSources($sourcepaths);
@@ -1209,12 +1199,15 @@
 				if (is_file($filename)) {
 					// generate target filename
 					$targetname = null;
-					if (null === $source_name) {
-						$targetname = normalizePath($targetdir."/".substr($filename, strlen(DATADIRECTORY)));
-					} else {
-						$foldername = "";
-						$username   = "";
 
+					// prepare path reconstruction
+					$foldername = "";
+					$filemeta   = null;
+					$subpath    = [];
+					$username   = "";
+					if (null === $source_name) {
+						$subpath = explode("/", substr($filename, strlen(DATADIRECTORY)));
+					} else {
 						// do we handle a user-specific external storage
 						if (false === strpos($source_name, "/")) {
 							$foldername = $source_name;
@@ -1222,10 +1215,38 @@
 							$foldername = substr($source_name, strpos($source_name, "/")+1);
 							$username   = substr($source_name, 0, strpos($source_name, "/"));
 						}
+						$subpath = explode("/", substr($filename, strlen($source_path)));
+					}
 
-						$targetname = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$foldername."/".substr($filename, strlen($source_path)));
+					// execute path reconstruction by trying to identify
+					// the original path components in the metadats
+					foreach ($subpath as $index => $element) {
+						// do some structural checks
+						if (array_key_exists($element,          $metadata)           &&
+						    array_key_exists(METADATA_FILENAME, $metadata[$element]) &&
+						    array_key_exists(METADATA_MIMETYPE, $metadata[$element])) {
+							// handle directories
+							if ($index < (count($subpath)-1)) {
+								if (METADATA_DIRECTORY === $metadata[$element][METADATA_MIMETYPE]) {
+									$subpath[$index] = $metadata[$element][METADATA_FILENAME];
+								}
+							} else {
+								if (METADATA_DIRECTORY !== $metadata[$element][METADATA_MIMETYPE]) {
+									$filemeta        = $metadata[$element];
+									$subpath[$index] = $metadata[$element][METADATA_FILENAME];
+								}
+							}
+						}
+					}
+
+					// finalize path reconstruction
+					if (null === $source_name) {
+						$targetname = normalizePath($targetdir."/".implode("/", $subpath));
+					} else {
+						$targetname = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$foldername."/".implode("/", $subpath));
 					}
 					debug("targetname = $targetname");
+
 
 					// only proceed if the target does not already exist
 					// or if the existing file does not have any content
@@ -1241,25 +1262,12 @@
 								mkdir(dirname($targetname), 0777, true);
 							}
 
-							// try to find and decrypt the fitting secret key
-							$secretkey = decryptSecretKey($parsed, $privatekeys);
-							debug("secretkey = ".((null !== $secretkey) ? "available" : "unavailable"));
-
-							// if the file provides all relevant key material then we try to decrypt it
-							if (null !== $secretkey) {
+							// only try to decrypt when we found corresponding metadata
+							if (null !== $filemeta) {
 								debug("trying to decrypt file...");
 
-								$success = decryptFile($filename, $secretkey, $targetname);
+								$success = decryptFile($filename, $filemeta, $targetname);
 							} else {
-								debug("cannot decrypt this file...");
-							}
-
-							// if the file does not provide all relevant key material or if the file
-							// could not be decrypted (maybe due to missing headers) we try to copy it,
-							// but we copy it only if it does not contain an encryption header and only
-							// if the decryption hasn't created a file already or if the created file
-							// does not have any content
-							if ((!$success) && ((!is_file($targetname)) || (0 >= filesize($targetname)))) {
 								debug("trying to copy file...");
 
 								$success = copyFile($filename, $targetname);
@@ -1290,7 +1298,6 @@
 				}
 			}
 		}
-*/
 
 		return $result;
 	}
