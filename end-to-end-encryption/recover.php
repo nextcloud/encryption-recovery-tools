@@ -478,16 +478,12 @@
 										// merge the unencrypted and decrypted metadata
 										$result[$filename] = array_merge($file, $metadata);
 
-                                                                                // prepare metadata
-                                                                                if (array_key_exists(METADATA_IV, $result[$filename])) {
-                                                                                        $result[$filename][METADATA_IV] = base64_decode($result[$filename][METADATA_IV]);
-                                                                                }
-                                                                                if (array_key_exists(METADATA_KEY, $result[$filename])) {
-                                                                                        $result[$filename][METADATA_KEY] = base64_decode($result[$filename][METADATA_KEY]);
-                                                                                }
-                                                                                if (array_key_exists(METADATA_TAG, $result[$filename])) {
-                                                                                        $result[$filename][METADATA_TAG] = base64_decode($result[$filename][METADATA_TAG]);
-                                                                                }
+										// prepare metadata
+										foreach ([METADATA_IV, METADATA_KEY, METADATA_TAG] as $element) {
+											if (array_key_exists($element, $result[$filename])) {
+												$result[$filename][$element] = base64_decode($result[$filename][$element]);
+											}
+										}
 									} else {
 										debug("decrypted metadata are not JSON-encoded");
 									}
@@ -1246,7 +1242,6 @@
 						$targetname = normalizePath($targetdir."/".$username."/".EXTERNAL_PREFIX.$foldername."/".implode("/", $subpath));
 					}
 					debug("targetname = $targetname");
-
 
 					// only proceed if the target does not already exist
 					// or if the existing file does not have any content
