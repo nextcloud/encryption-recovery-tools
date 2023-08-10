@@ -45,6 +45,7 @@ class main extends PHPUnit\Framework\TestCase {
 						unlink(static::concat_path($path, $content_item));
 					} elseif (is_dir(static::concat_path($path, $content_item))) {
 						static::clear_dir(static::concat_path($path, $content_item));
+						rmdir(static::concat_path($path, $content_item));
 					}
 				}
 			}
