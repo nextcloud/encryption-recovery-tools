@@ -1,6 +1,5 @@
 <?php
-final class println extends PHPUnit\Framework\TestCase
-{
+final class println extends PHPUnit\Framework\TestCase {
 	public function test() {
 		define("TESTING", true);
 
