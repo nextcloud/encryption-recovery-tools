@@ -17,7 +17,7 @@ In order to use the script you have to configure the given values below:
 All configuration values can alternatively be provided through environment variables and superseed the information provided within the script.
 Lists like `EXTERNAL_STORAGES` and `USER_MNEMONICS` must be provided as space-separated strings.
 
-It is possible to provide more than one password per user through `USER_MNEMONICS` in case you have several mnemonics and do not know which of them is correct. All of them will be tried out.
+It is possible to provide more than one mnemonic per user through `USER_MNEMONICS` in case you have several mnemonics and do not know which of them is correct. All of them will be tried out.
 
 ## Execution
 
