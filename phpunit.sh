@@ -38,18 +38,18 @@ echo "===== END-TO-END ENCRYPTION ====="
 echo
 
 # check if the test data repository has been checked out
-#echo "Preparing the test data for the end-to-end encryption, this could take a while..."
-#if [[ -d ./tests/data/end-to-end-encryption ]]
-#then
-#  git -C ./tests/data/end-to-end-encryption pull >/dev/null 2>&1
-#else
-#  git clone https://github.com/nextcloud/end-to-end-encryption-testdata ./tests/data/end-to-end-encryption >/dev/null 2>&1
-#fi
-#if [[ "$?" -ne "0" ]]
-#then
-#  echo "ERROR: Preparing the test data for the end-to-end encryption failed." >&2
-#  exit 5
-#fi
+echo "Preparing the test data for the end-to-end encryption, this could take a while..."
+if [[ -d ./tests/data/end-to-end-encryption ]]
+then
+  git -C ./tests/data/end-to-end-encryption pull >/dev/null 2>&1
+else
+  git clone https://github.com/nextcloud/end-to-end-encryption-testdata ./tests/data/end-to-end-encryption >/dev/null 2>&1
+fi
+if [[ "$?" -ne "0" ]]
+then
+  echo "ERROR: Preparing the test data for the end-to-end encryption failed." >&2
+  exit 5
+fi
 
 # separate output
 echo

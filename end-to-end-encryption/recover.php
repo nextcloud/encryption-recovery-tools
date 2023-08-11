@@ -137,14 +137,10 @@
 	// ===== USER CONFIGURATION =====
 
 	// nextcloud definitions - you can get these values from `config/config.php`
-#	config("DATADIRECTORY", "~/github/encryption-recovery-tools/tests/data/end-to-end-encryption/e2e/data/");
+	config("DATADIRECTORY", "");
 
-#config("USER_MNEMONICS", ["admin" => "member arm belt cute depend pull borrow rigid thank humble space illness"]);
-#config("DEBUG_MODE", false);
-#config("DEBUG_MODE_VERBOSE", false);
-
-	// user password definition,
-	// replace "username" with the actual usernames and "password" with the actual passwords,
+	// user mnemonic definition,
+	// replace "username" with the actual usernames and "mnemonic" with the actual mnemonics,
 	// you can add or remove entries as necessary
 	config("USER_MNEMONICS", ["username" => "mnemonic",
 	                          "username" => "mnemonic",
