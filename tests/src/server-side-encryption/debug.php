@@ -1,6 +1,5 @@
 <?php
-final class debug extends PHPUnit\Framework\TestCase
-{
+final class debug extends PHPUnit\Framework\TestCase {
 	public function test_false() {
 		define("TESTING",    true);
 		define("DEBUG_MODE", false);

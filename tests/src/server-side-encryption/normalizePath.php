@@ -1,6 +1,5 @@
 <?php
-final class normalizePath extends PHPUnit\Framework\TestCase
-{
+final class normalizePath extends PHPUnit\Framework\TestCase {
 	public function test_false() {
 		define("TESTING", true);
 

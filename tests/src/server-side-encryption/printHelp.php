@@ -1,6 +1,5 @@
 <?php
-final class printHelp extends PHPUnit\Framework\TestCase
-{
+final class printHelp extends PHPUnit\Framework\TestCase {
 	protected static function get_help_text() {
 		$source = file(__DIR__."/../../../server-side-encryption/recover.php", FILE_IGNORE_NEW_LINES);
 

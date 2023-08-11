@@ -1,23 +1,15 @@
 <?php
-final class debugConfig extends PHPUnit\Framework\TestCase
-{
+final class debugConfig extends PHPUnit\Framework\TestCase {
 	protected static function generateTestOutput() {
 		return "DEBUG: DATADIRECTORY = ".var_export(getcwd(), true).PHP_EOL.
 		       "DEBUG: DEBUG_MODE = true".PHP_EOL.
 		       "DEBUG: DEBUG_MODE_VERBOSE = true".PHP_EOL.
-		       "DEBUG: EXTERNAL_STORAGES = array (".PHP_EOL.
-		       ")".PHP_EOL.
-		       "DEBUG: INSTANCEID = array (".PHP_EOL.
-		       "  0 => '',".PHP_EOL.
-		       ")".PHP_EOL.
-		       "DEBUG: RECOVERY_PASSWORD = array (".PHP_EOL.
-		       ")".PHP_EOL.
-		       "DEBUG: SECRET = array (".PHP_EOL.
-		       "  0 => '',".PHP_EOL.
-		       ")".PHP_EOL.
+		       "DEBUG: EXTERNAL_STORAGES = ".var_export([], true).PHP_EOL.
+		       "DEBUG: INSTANCEID = ".var_export([], true).PHP_EOL.
+		       "DEBUG: RECOVERY_PASSWORD = ".var_export([], true).PHP_EOL.
+		       "DEBUG: SECRET = ".var_export([""], true).PHP_EOL.
 		       "DEBUG: SUPPORT_MISSING_HEADERS = false".PHP_EOL.
-		       "DEBUG: USER_PASSWORDS = array (".PHP_EOL.
-		       ")".PHP_EOL;
+		       "DEBUG: USER_PASSWORDS = ".var_export([], true).PHP_EOL;
 	}
 
 	public function test_false() {

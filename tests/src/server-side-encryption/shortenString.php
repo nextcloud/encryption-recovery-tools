@@ -1,6 +1,5 @@
 <?php
-final class shortenString extends PHPUnit\Framework\TestCase
-{
+final class shortenString extends PHPUnit\Framework\TestCase {
 	public function test() {
 		define("TESTING", true);
 
