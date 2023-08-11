@@ -459,6 +459,8 @@
 						$parts = null;
 						if (false !== strpos($file[METADATA_ENCRYPTED], "|")) {
 							$parts = explode("|", $file[METADATA_ENCRYPTED]);
+						} elseif (false !== strpos($file[METADATA_ENCRYPTED], "fA==")) {
+							$parts = explode("fA==", $file[METADATA_ENCRYPTED]);
 						}
 
 						// we at least need two parts
