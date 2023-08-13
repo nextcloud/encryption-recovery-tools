@@ -3,6 +3,7 @@
 ## v??.?.? (2023-??-??)
 
 * introduce decryption support for Owncloud 7 and later
+* introduce decryption support for the end-to-end encryption
 * heavily improve the path handling
 * introduce unit tests for most of the code
 * introduce support for environment variables

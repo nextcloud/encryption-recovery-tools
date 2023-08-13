@@ -13,7 +13,7 @@ final class parseHeader extends PHPUnit\Framework\TestCase {
 		            HEADER_KEYFORMAT            => HEADER_KEYFORMAT_PASSWORD,
 		            HEADER_OC_ENCRYPTION_MODULE => HEADER_OC_ENCRYPTION_MODULE_DEFAULT,
 		            HEADER_SIGNED               => HEADER_VALUE_FALSE,
-		            HEADER_USE_LEGACY_FILE_KEY  => HEADER_VALUE_FALSE];
+		            HEADER_USE_LEGACY_FILE_KEY  => HEADER_VALUE_TRUE];
 
 		$result = parseHeader("", false);
 		self::assertEqualsCanonicalizing([], $result);
@@ -76,7 +76,7 @@ final class parseHeader extends PHPUnit\Framework\TestCase {
 		            HEADER_KEYFORMAT            => HEADER_KEYFORMAT_PASSWORD,
 		            HEADER_OC_ENCRYPTION_MODULE => HEADER_OC_ENCRYPTION_MODULE_DEFAULT,
 		            HEADER_SIGNED               => HEADER_VALUE_FALSE,
-		            HEADER_USE_LEGACY_FILE_KEY  => HEADER_VALUE_FALSE];
+		            HEADER_USE_LEGACY_FILE_KEY  => HEADER_VALUE_TRUE];
 
 		$result = parseHeader("", true);
 		self::assertEqualsCanonicalizing($minimal, $result);

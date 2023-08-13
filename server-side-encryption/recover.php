@@ -911,7 +911,7 @@
 			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
 			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
 			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
-			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
+			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_TRUE;
 
 			// extract content between HBEGIN and HEND
 			$header = substr($file, strlen(HEADER_BEGIN), strpos($file, HEADER_END)-strlen(HEADER_BEGIN));
@@ -941,7 +941,7 @@
 			$result[HEADER_KEYFORMAT]            = HEADER_KEYFORMAT_PASSWORD;
 			$result[HEADER_OC_ENCRYPTION_MODULE] = HEADER_OC_ENCRYPTION_MODULE_DEFAULT;
 			$result[HEADER_SIGNED]               = HEADER_VALUE_FALSE;
-			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_FALSE;
+			$result[HEADER_USE_LEGACY_FILE_KEY]  = HEADER_VALUE_TRUE;
 
 			debug("key is using legacy format, setting default values...");
 		}
