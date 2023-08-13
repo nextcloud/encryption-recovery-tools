@@ -1020,7 +1020,7 @@
 
 		$folderlist = recursiveScandir(DATADIRECTORY, false);
 		foreach ($folderlist as $foldername) {
-			if (is_dir($foldername)) {  
+			if (is_dir($foldername)) { 
 				if (1 === preg_match("@^".preg_quote(DATADIRECTORY, "@")."/appdata_[0-9a-z]+$@", $foldername)) {
 					// potential key path
 					$keypath = normalizePath($foldername."/end_to_end_encryption/private-keys/");
