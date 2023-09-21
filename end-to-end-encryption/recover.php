@@ -201,10 +201,6 @@
 
 	// ===== HELPER FUNCTIONS =====
 
-	// we need a specific implementation of RSA that is not provided by PHP
-	require_once(__DIR__."/vendor/autoload.php");
-	use phpseclib3\Crypt\RSA;
-
 	// only define a constant if it does not exist
 	function config($key, $value) {
 		if (!defined($key)) {
@@ -425,11 +421,9 @@
 				$key = false;
 
 				foreach ($privatekeys as $privatekey) {
-					$key = RSA::loadPrivateKey($privatekey)
-					       ->withPadding(RSA::ENCRYPTION_OAEP)
-					       ->withHash("sha256")
-					       ->withMGFHash("sha256")
-					       ->decrypt($element);
+					$key = rsaDecrypt($element,
+					                  $privatekey,
+					                  "sha256");
 					if (false !== $key) {
 						// yes, this really is base64-encoded several times
 						$keys[] = base64_decode(base64_decode($key));
@@ -970,6 +964,102 @@
 							$result[] = normalizePath($path."/".$content_item);
 						}
 					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	// decrypt RSA blob with OAEP unpadding
+	function rsaDecrypt($ciphertext, $privatekey, $algo = "sha256") {
+		$result = false;
+
+		// parse RSA key
+		$key = openssl_pkey_get_private($privatekey);
+		if (false !== $key) {
+			try {
+				// get RSA key details
+				$details = openssl_pkey_get_details($key);
+				if (false !== $details) {
+					if (array_key_exists("rsa", $details) &&
+					    array_key_exists("d",   $details["rsa"]) &&
+					    array_key_exists("n",   $details["rsa"])) {
+						// get big number representations
+						$c = gmp_import($ciphertext,          strlen($ciphertext),          GMP_BIG_ENDIAN);
+						$d = gmp_import($details["rsa"]["d"], strlen($details["rsa"]["d"]), GMP_BIG_ENDIAN);
+						$n = gmp_import($details["rsa"]["n"], strlen($details["rsa"]["n"]), GMP_BIG_ENDIAN);
+
+						// decrypt content
+						$tmp = gmp_powm($c, $d, $n);
+						$tmp = gmp_export($tmp, strlen($details["rsa"]["n"]), GMP_BIG_ENDIAN);
+
+						// unpad message
+						$result = rsaOAEP($tmp, $algo);
+					}
+				}
+			} finally {
+				// prevent deprecation notice in PHP 8.0 and above
+				if (0 > version_compare(PHP_VERSION, "8.0.0")) {
+					openssl_free_key($key);
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	// mask generation function
+	function rsaMGF1($seed, $length, $algo = "sha256") {
+		$result = false;
+
+		// parameter check
+		if (0 < $length) {
+			$result = "";
+
+			$hashLength = strlen(hash($algo, "", true));
+			for ($counter = 0; $counter < ceil($length / $hashLength); $counter++) {
+				$result .= hash($algo, $seed.pack("N", $counter), true);
+			}
+
+			// get the requested length
+			$result = substr($result, 0, $length);
+		}
+
+		return $result;
+	}
+
+	// optimal asymmetric encryption padding
+	function rsaOAEP($content, $algo = "sha256", $oaepLabel = "") {
+		$result = false;
+
+		// check that the first byte is zero
+		if ((1 < strlen($content)) &&
+		    ("\x00" === $content[0])) {
+			$hashLength = strlen(hash($algo, "", true));
+
+			// parse message
+			$maskedSeed = substr($content, 1, $hashLength);
+			$maskedDB   = substr($content, $hashLength+1);
+
+			// derive seed from maskedSeed and maskedDB
+			$seedMask = rsaMGF1($maskedDB, $hashLength);
+			$seed     = $maskedSeed ^ $seedMask;
+
+			// unmask actual data
+			$dbMask = rsaMGF1($seed, strlen($maskedDB));
+			$db     = $maskedDB ^ $dbMask;
+
+			// parse the unmasked content
+			$hash = substr($db, 0, $hashLength);
+			if (hash_equals($hash, hash($algo, $oaepLabel, true))) {
+				$tmp = substr($db, $hashLength);
+				$tmp = ltrim($tmp, "\x00");
+
+				// check that the first byte is one
+				if ((1 < strlen($tmp)) &&
+				    ("\x01" === $tmp[0])) {
+					$result = substr($tmp, 1);
 				}
 			}
 		}

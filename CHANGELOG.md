@@ -13,6 +13,7 @@
 * support array of values in `SECRET`
 * support array of passwords per user in `USER_PASSWORDS`
 * prevent execution under Windows
+* implement RSA encryption with SHA-256 by hand to not introduce a dependency
 
 ## v27.0.0 (2023-07-12)
 
