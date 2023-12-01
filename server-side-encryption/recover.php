@@ -280,6 +280,14 @@
 	config("META_PADDING_TAG_SHORT", "xx");
 	config("META_SIGNATURE_TAG",     "00sig00");
 
+	// define content of informational README.txt
+	config("README_TXT_CONTENT",  "Please note:".PHP_EOL.
+	                              "Multiple encryption keys were available for this file.".PHP_EOL.
+	                              "Therefore each possible decryption was placed in a separate subfolder.".PHP_EOL.
+	                              PHP_EOL.
+	                              "Sorry for the inconvenience!");
+	config("README_TXT_FILENAME", "README.txt");
+
 	// ===== HELPER FUNCTIONS =====
 
 	// only define a constant if it does not exist
@@ -289,8 +297,30 @@
 			if (false !== getenv($key)) {
 				// handle specific environment variables differently
 				switch ($key) {
-					// handle as arrays
+					// handle as associative array of integers
 					case "CIPHER_SUPPORT":
+						$value   = [];
+						$entries = explode(" ", getenv($key));
+						foreach ($entries as $entry) {
+							if (false !== strpos($entry, "=")) {
+								$left  = substr($entry, 0, strpos($entry, "="));
+								$right = substr($entry, strpos($entry, "=")+1);
+								$right = filter_var($right, FILTER_VALIDATE_INT, ["flags" => FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX]);
+								if (false !== $right) {
+									$value[$left] = $right;
+								}
+							}
+						}
+						break;
+
+					// handle as booleans
+					case "DEBUG_MODE":
+					case "DEBUG_MODE_VERBOSE":
+					case "SUPPORT_MISSING_HEADERS":
+						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+						break;
+
+					// handle as associative array of strings
 					case "EXTERNAL_STORAGES":
 						$value   = [];
 						$entries = explode(" ", getenv($key));
@@ -303,18 +333,11 @@
 						}
 						break;
 
-					// handle as booleans
-					case "DEBUG_MODE":
-					case "DEBUG_MODE_VERBOSE":
-					case "SUPPORT_MISSING_HEADERS":
-						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
-						break;
-
 					// handle instanceid specifically
 					case "INSTANCEID":
 						$value = explode(" ", getenv($key));
 						if ((1 === count($value)) && (0 === strlen($value[0]))) {
-							$value = null;
+							$value = searchInstanceIDs();
 						}
 						break;
 
@@ -324,7 +347,7 @@
 						$value = explode(" ", getenv($key));
 						break;
 
-					// handle user password specifically
+					// handle user passwords specifically
 					case "USER_PASSWORDS":
 						$value   = [];
 						$entries = explode(" ", getenv($key));
@@ -359,9 +382,7 @@
 					break;
 
 				case "INSTANCEID":
-					if (null === $value) {
-						$value = searchInstanceIDs();
-					} elseif (!is_array($value)) {
+					if (!is_array($value)) {
 						$value = [$value];
 					}
 					break;
@@ -627,7 +648,7 @@
 
 	// try to find and decrypt the secret key for the parsed filename
 	function decryptSecretKey($parsed, $privatekeys) {
-		$result = null;
+		$result = [];
 
 		// retrieve all potential key material
 		$filekeys  = searchFileKeys($parsed);
@@ -648,17 +669,19 @@
 							if (false !== $filekey) {
 								$tmpkey = rc4($filekey, $intermediate);
 								if (false !== $tmpkey) {
-									$result = $tmpkey;
+									// only add the filekey to the result if it is unknown yet
+									$exists = false;
+									foreach ($result as $key => $value) {
+										$exists = $exists || hash_equals($value, $tmpkey);
+									}
+									if (!$exists) {
+										$result[$keyname] = $tmpkey;
+									}
 								} else {
 									debug("secretkey could not be decrypted from legacy file key...");
 								}
 							} else {
 								debug("filekey could not be read from file...");
-							}
-
-							// exit the loop
-							if (null !== $result) {
-								break;
 							}
 						}
 					} else {
@@ -668,12 +691,19 @@
 
 					// try to decrypt the new share key second,
 					// we also do this when there is a file key in case it is a leftover
-					if (null === $result) {
+					if (!array_key_exists($keyname, $result)) {
 						if (openssl_private_decrypt($sharekey,
 						                            $tmpkey,
 						                            $privatekeys[$keyname],
 						                            OPENSSL_PKCS1_OAEP_PADDING)) {
-							$result = $tmpkey;
+							// only add the filekey to the result if it is unknown yet
+							$exists = false;
+							foreach ($result as $key => $value) {
+								$exists = $exists || hash_equals($value, $tmpkey);
+							}
+							if (!$exists) {
+								$result[$keyname] = $tmpkey;
+							}
 						} else {
 							debug("openssl_private_decrypt() failed: ".openssl_error_string());
 							debug("sharekey could not be decrypted as secret key...");
@@ -682,17 +712,13 @@
 				} else {
 					debug("sharekey could not be read from file...");
 				}
-
-				// exit the loop
-				if (null !== $result) {
-					break;
-				}
 			}
+		}
 
-			// exit the loop
-			if (null !== $result) {
-				break;
-			}
+		// cleanup the result
+		if (1 >= count($result)) {
+			// either return the only element or NULL
+			$result = array_pop($result);
 		}
 
 		return $result;
@@ -1009,10 +1035,8 @@
 		config("DATADIRECTORY", getcwd());
 		config("SECRET",        []);
 
-		// instanceid definition,
-		// will populate the value with the
-		// result from searchInstanceIDs()
-		config("INSTANCEID", null);
+		// instanceid definition
+		config("INSTANCEID", searchInstanceIDs());
 
 		// recovery password definition
 		config("RECOVERY_PASSWORD", []);
@@ -1643,35 +1667,105 @@
 							$secretkey = decryptSecretKey($parsed, $privatekeys);
 							debug("secretkey = ".((null !== $secretkey) ? "available" : "unavailable"));
 
+							// print a warning if multiple secret keys are returned
+							if (is_array($secretkey)) {
+								println("WARNING: MULTIPLE SECRET KEYS AVAILABLE, WILL ENCRYPT FILE TO FOLDER");
+							}
+
 							// if the file provides all relevant key material then we try to decrypt it
 							if (null !== $secretkey) {
-								debug("trying to decrypt file...");
+								// handle multiple secret keys differently
+								if (is_array($secretkey)) {
+									// try to recursively create the target subfolder
+									if (!is_dir($targetname)) {
+										 mkdir($targetname, 0777, true);
+									}
 
-								$success = decryptFile($filename, $secretkey, $targetname);
+									foreach ($secretkey as $key => $value) {
+										debug("trying to decrypt file as $key...");
+
+										// try to recursively create the target subfolder
+										if (!is_dir(normalizePath($targetname."/".$key))) {
+											mkdir(normalizePath($targetname."/".$key), 0777, true);
+										}
+
+										if (decryptFile($filename, $value, normalizePath($targetname."/".$key."/".basename($targetname)))) {
+											debug("decrypting the file as $key succeeded...");
+
+											$success = true;
+										} else {
+											debug("decrypting the file as $key failed...");
+
+											// we failed but created a file,
+											// discard the broken file
+											if (is_file(normalizePath($targetname."/".$key."/".basename($targetname)))) {
+												unlink(normalizePath($targetname."/".$key."/".basename($targetname)));
+											}
+
+											// we failed but created a folder,
+											// discard the empty folder
+											if (is_dir(normalizePath($targetname."/".$key))) {
+												rmdir(normalizePath($targetname."/".$key));
+											}
+										}
+									}
+
+									if ($success) {
+										debug("trying to place the README...");
+
+										// place the readme within the target subfolder
+										if (file_put_contents(normalizePath($targetname."/".README_TXT_FILENAME), README_TXT_CONTENT)) {
+											debug("placing the README succeeded...");
+										} else {
+											debug("placing the README failed...");
+										}
+									} else {
+										// we failed but created a folder,
+										// discard the empty folder
+										if (is_dir($targetname)) {
+											rmdir($targetname);
+										}
+									}
+								} else {
+									debug("trying to decrypt file...");
+
+									if (decryptFile($filename, $secretkey, $targetname)) {
+										debug("decrypting the file succeeded...");
+
+										$success = true;
+									} else {
+										debug("decrypting the file failed...");
+
+										// we failed but created a file,
+										// discard the broken file
+										if (is_file($targetname)) {
+											unlink($targetname);
+										}
+									}
+								}
 							} else {
 								debug("cannot decrypt this file...");
 							}
 
 							// if the file does not provide all relevant key material or if the file
 							// could not be decrypted (maybe due to missing headers) we try to copy it,
-							// but we copy it only if it does not contain an encryption header and only
-							// if the decryption hasn't created a file already or if the created file
-							// does not have any content
+							// but we copy it only if the decryption failed and the file does not exist
 							if ((!$success) && ((!is_file($targetname)) || (0 >= filesize($targetname)))) {
 								debug("trying to copy file...");
 
-								$success = copyFile($filename, $targetname);
+								if (copyFile($filename, $targetname)) {
+									debug("copying the file succeeded...");
+
+									$success = true;
+								} else {
+									debug("copying the file failed...");
+								}
 							}
 
 							debug("success = ".($success ? "true" : "false"));
 							if ($success) {
 								println("DONE: $filename");
 							} else {
-								// we failed but created a file,
-								// discard the broken file
-								if (is_file($targetname)) {
-									unlink($targetname);
-								}
 								println("ERROR: $filename FAILED");
 							}
 

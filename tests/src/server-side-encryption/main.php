@@ -61,8 +61,38 @@ class main extends PHPUnit\Framework\TestCase {
 			foreach ($content as $content_item) {
 				if (("." !== $content_item) && (".." !== $content_item)) {
 					if (is_file(static::concat_path($original, $content_item))) {
-						static::assertFileEquals(static::concat_path($original,  $content_item),
-						                         static::concat_path($decrypted, $content_item));
+						// check if the original file was decrypted to a folder
+						if (is_dir(static::concat_path($decrypted, $content_item))) {
+							// if we do not find a correctly decrypted file then this is the fallback test
+							$equalfile = static::concat_path($decrypted, $content_item);
+
+							// speed up the comparison
+							$originalhash = sha1_file(static::concat_path($original, $content_item));
+
+							$subfolders = scandir(static::concat_path($decrypted, $content_item));
+							foreach ($subfolders as $subfolders_item) {
+								if (("." !== $subfolders_item) && (".." !== $subfolders_item)) {
+									// prepare path name
+									$pathname = static::concat_path($decrypted, $content_item);
+									$pathname = static::concat_path($pathname,  $subfolders_item);
+									$pathname = static::concat_path($pathname,  $content_item);
+
+									if (is_file($pathname)) {
+										if (hash_equals($originalhash, sha1_file($pathname))) {
+											$equalfile = $pathname;
+											break;
+										}
+									}
+								}
+							}
+
+							// if we found a correctly decrypted file then this assertion will succeed
+							static::assertFileEquals(static::concat_path($original,  $content_item),
+							                         $equalfile);
+						} else {
+							static::assertFileEquals(static::concat_path($original,  $content_item),
+							                         static::concat_path($decrypted, $content_item));
+						}
 					} elseif (is_dir(static::concat_path($original, $content_item))) {
 						static::compare_dir(static::concat_path($original, $content_item),
 						                    static::concat_path($decrypted, $content_item));

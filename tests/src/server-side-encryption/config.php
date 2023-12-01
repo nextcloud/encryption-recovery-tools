@@ -72,4 +72,37 @@ final class config extends PHPUnit\Framework\TestCase {
 		config("USER_PASSWORDS", []);
 		self::assertSame($expected, USER_PASSWORDS);
 	}
+
+	public function test_putenv_overwrite_dec() {
+		define("TESTING", true);
+
+		$expected = ["test" => 10];
+		putenv("CIPHER_SUPPORT=test=10");
+
+		include(__DIR__."/../../../server-side-encryption/recover.php");
+
+		self::assertSame($expected, CIPHER_SUPPORT);
+	}
+
+	public function test_putenv_overwrite_hex() {
+		define("TESTING", true);
+
+		$expected = ["test" => 10];
+		putenv("CIPHER_SUPPORT=test=0xA");
+
+		include(__DIR__."/../../../server-side-encryption/recover.php");
+
+		self::assertSame($expected, CIPHER_SUPPORT);
+	}
+
+	public function test_putenv_overwrite_oct() {
+		define("TESTING", true);
+
+		$expected = ["test" => 10];
+		putenv("CIPHER_SUPPORT=test=012");
+
+		include(__DIR__."/../../../server-side-encryption/recover.php");
+
+		self::assertSame($expected, CIPHER_SUPPORT);
+	}
 }
