@@ -60,7 +60,7 @@ TEMP="$?"
 # only proceed if no errors occured
 if [[ "$TEMP" -ne "0" ]]
 then
-  echo "ERROR: error durring phpunit run for the end-to-end encryption" >&2
+  echo "ERROR: error during phpunit run for the end-to-end encryption" >&2
   exit "$TEMP"
 fi
 
@@ -91,6 +91,6 @@ TEMP="$?"
 # only proceed if no errors occured
 if [[ "$TEMP" -ne "0" ]]
 then
-  echo "ERROR: error durring phpunit run for the server-side encryption" >&2
+  echo "ERROR: error during phpunit run for the server-side encryption" >&2
   exit "$TEMP"
 fi
