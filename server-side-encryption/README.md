@@ -37,8 +37,8 @@ To execute the script you have to call it in the following way:
 The following parameters are supported:
 
 * **`<targetdir>`** - this is the target directory where the decrypted files get stored, the target directory has to already exist and should be empty as already-existing files will be skipped, make sure that there is enough space to store all decrypted files in the target directory
-* **`<sourcedir>`** - this is the name of the source folder which shall be decrypted, the name of the source folder has to be either absolute or relative to the current working directory, if this parameter is not provided then all files in the data directory will be decrypted
-* **`<sourcefile>`** - this is the name of the source file which shall be decrypted, the name of the source file has to be either absolute or relative to the current working directory, if this parameter is not provided then all files in the data directory will be decrypted
+* **`<sourcedir>`** - this is the name of the source folder which shall be decrypted, the name of the source folder has to be either absolute or relative to the current working directory and the source folder needs to be located within the `DATADIRECTORY`, if this parameter is not provided then all files in the data directory will be decrypted
+* **`<sourcefile>`** - this is the name of the source file which shall be decrypted, the name of the source file has to be either absolute or relative to the current working directory and the source file needs to be located within the `DATADIRECTORY`, if this parameter is not provided then all files in the data directory will be decrypted
 
 The execution may take a lot of time, depending on the power of your computer and on the number and size of your files.
 Make sure that the script is able to run without interruption.

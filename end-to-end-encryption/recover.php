@@ -118,12 +118,14 @@
 	#
 	# <sourcedir>  this is the name of the source folder which shall be decrypted, the
 	# (OPTIONAL)   name of the source folder has to be either absolute or relative to
-	#              the current working directory, if this parameter is not provided
+	#              the current working directory and the source folder needs to be
+	#              located within the DATADIRECTORY, if this parameter is not provided
 	#              then all files in the data directory will be decrypted
 	#
 	# <sourcefile> this is the name of the source file which shall be decrypted, the
 	# (OPTIONAL)   name of the source file has to be either absolute or relative to
-	#              the current working directory, if this parameter is not provided
+	#              the current working directory and the source file needs to be
+	#              located within the DATADIRECTORY, if this parameter is not provided
 	#              then all files in the data directory will be decrypted
 	#
 	# The execution may take a lot of time, depending on the power of your computer
