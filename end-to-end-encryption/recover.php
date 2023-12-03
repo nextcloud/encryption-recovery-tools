@@ -1410,7 +1410,7 @@
 							// update result
 							$result = ($result && $success);
 						} else {
-							debug("skipping this file because the filename structure is not unknown...");
+							debug("skipping this file because the filename structure is unknown...");
 						}
 					} else {
 						println("SKIP: $targetname ALREADY EXISTS");
