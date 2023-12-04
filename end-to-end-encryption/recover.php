@@ -142,14 +142,16 @@
 	config("DATADIRECTORY", "");
 
 	// user mnemonic definition,
-	// replace "username" with the actual usernames and "mnemonic" with the actual mnemonics,
+	// replace "username" with the actual usernames
+	// and "mnemonic" with the actual mnemonics,
 	// you can add or remove entries as necessary
 	config("USER_MNEMONICS", ["username" => "mnemonic",
 	                          "username" => "mnemonic",
 	                          "username" => "mnemonic"]);
 
 	// external storage definition,
-	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
+	// replace "storage" with the actual external storage names
+	// and "/mountpath" with the actual external storage mount paths,
 	// you can add or remove entries as necessary
 	// config("EXTERNAL_STORAGES", ["storage" => "/mountpath",
 	//                              "storage" => "/mountpath",
@@ -276,6 +278,9 @@
 						}
 					}
 					break;
+
+				default:
+					// by default we don't normalize the value
 			}
 
 			// finally define the constant
@@ -683,7 +688,7 @@
 		$path = explode($slash, $path);
 		if (0 < count($path)) {
 			// prepare $cwd as empty array
-			$cwd = array();
+			$cwd = [];
 
 			// check if the starts with a home name
 			if (1 === preg_match("@^~(?<username>.+)$@", $path[0], $matches)) {
@@ -1356,7 +1361,7 @@
 								}
 							} else {
 								if ((METADATA_DIRECTORY_A !== $metadata[$element][METADATA_MIMETYPE]) &&
-								    (METADATA_DIRECTORY_A !== $metadata[$element][METADATA_MIMETYPE])) {
+								    (METADATA_DIRECTORY_B !== $metadata[$element][METADATA_MIMETYPE])) {
 									$filemeta        = $metadata[$element];
 									$subpath[$index] = $metadata[$element][METADATA_FILENAME];
 								}
