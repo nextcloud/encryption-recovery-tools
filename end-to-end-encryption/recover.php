@@ -440,7 +440,7 @@
 				}
 			}
 
-			// proceed if we decrypted at least on metadata key
+			// proceed if we decrypted at least one metadata key
 			if (0 < count($keys)) {
 				$result = [];
 
