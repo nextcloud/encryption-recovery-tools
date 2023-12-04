@@ -190,14 +190,16 @@
 	// config("RECOVERY_PASSWORD", "");
 
 	// user password definition,
-	// replace "username" with the actual usernames and "password" with the actual passwords,
+	// replace "username" with the actual usernames
+	// and "password" with the actual passwords,
 	// you can add or remove entries as necessary
 	// config("USER_PASSWORDS", ["username" => "password",
 	//                           "username" => "password",
 	//                           "username" => "password"]);
 
 	// external storage definition,
-	// replace "storage" with the actual external storage names and "/mountpath" with the actual external storage mount paths,
+	// replace "storage" with the actual external storage names
+	// and "/mountpath" with the actual external storage mount paths,
 	// you can add or remove entries as necessary
 	// config("EXTERNAL_STORAGES", ["storage" => "/mountpath",
 	//                              "storage" => "/mountpath",
@@ -384,11 +386,6 @@
 					break;
 
 				case "INSTANCEID":
-					if (!is_array($value)) {
-						$value = [$value];
-					}
-					break;
-
 				case "RECOVERY_PASSWORD":
 				case "SECRET":
 					if (!is_array($value)) {
@@ -404,6 +401,9 @@
 						}
 					}
 					break;
+
+				default:
+					// by default we don't normalize the value
 			}
 
 			// finally define the constant
@@ -555,6 +555,9 @@
 				case HEADER_KEYFORMAT_HASH2:
 					$iterations = 600000;
 					break;
+
+				default:
+					// keep $iterations as it is
 			}
 
 			// iterate over the potential combinations
@@ -773,7 +776,7 @@
 		$path = explode($slash, $path);
 		if (0 < count($path)) {
 			// prepare $cwd as empty array
-			$cwd = array();
+			$cwd = [];
 
 			// check if the starts with a home name
 			if (1 === preg_match("@^~(?<username>.+)$@", $path[0], $matches)) {
