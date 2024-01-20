@@ -1,6 +1,6 @@
 # Changelog
 
-## v??.?.? (2023-??-??)
+## v28.0.0 (2024-01-19)
 
 * introduce decryption support for Owncloud 7 and later
 * introduce decryption support for the end-to-end encryption
