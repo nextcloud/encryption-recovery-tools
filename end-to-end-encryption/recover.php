@@ -3,7 +3,7 @@
 
 	# ./end-to-end-encryption/recover.php
 	#
-	# Copyright (c) 2023,      Yahe <hello@yahe.sh>
+	# Copyright (c) 2023-2024, Yahe <hello@yahe.sh>
 	# Copyright (c) 2019-2023, SysEleven GmbH
 	# All rights reserved.
 	#
@@ -79,27 +79,39 @@
 	#                                         ["admin/sftp" => "/mnt/sshfs"]);
 	#
 	#
+	# script source settings:
+	# =======================
+	#
+	# The configuration can be done directly within the script source. Scroll down to
+	# the "USER CONFIGURATION" section within the script source. Configuration values
+	# set via environment variables take precedence over values set in the script
+	# source.
+	#
+	#
 	# environment variables:
 	# ======================
 	#
 	# All configuration values can alternatively be provided through environment
-	# variables and superseed the information provided within the script. Lists like
-	# EXTERNAL_STORAGES and USER_MNEMONICS must be provided as space-separated
-	# strings.
+	# variables and take precedence over settings provided within the script source.
+	# When using environment variables then the following information need to be taken
+	# into account:
 	#
-	# Example: if two user mnemonicss shall be provided through an environment
-	#          variable then the corresponding value has to be set as:
+	# * Lists like  EXTERNAL_STORAGES and USER_MNEMONICS must be provided as
+	#   space-separated strings.
 	#
-	#          USER_MNEMONICS="user1=mnemonic1 user2=mnemonic2"
+	#   Example: if two user mnemonicss shall be provided through an environment
+	#            variable then the corresponding value has to be set as:
 	#
-	# It is possible to provide more than one mnemonic per user through USER_MNEMONICS
-	# in case you have several mnemonicss and do not know which of them is correct.
-	# All of them will be tried out.
+	#            USER_MNEMONICS="user1=mnemonic1 user2=mnemonic2"
 	#
-	# Example: if two mnemonics for the same user shall be provided through an
-	#          environment variable then the corresponding value has to be set as:
+	# * It is possible to provide more than one mnemonic per user through
+	#   USER_MNEMONICS in case you have several mnemonicss and do not know which of
+	#   them is correct. All of them will be tried out.
 	#
-	#          USER_MNEMONICS="user=mnemonic1 user=mnemonic2"
+	#   Example: if two mnemonics for the same user shall be provided through an
+	#            environment variable then the corresponding value has to be set as:
+	#
+	#            USER_MNEMONICS="user=mnemonic1 user=mnemonic2"
 	#
 	#
 	# execution:

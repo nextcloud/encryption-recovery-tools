@@ -3,7 +3,7 @@
 
 	# ./server-side-encryption/recover.php
 	#
-	# Copyright (c) 2023,      Yahe <hello@yahe.sh>
+	# Copyright (c) 2023-2024, Yahe <hello@yahe.sh>
 	# Copyright (c) 2019-2023, SysEleven GmbH
 	# All rights reserved.
 	#
@@ -112,31 +112,43 @@
 	#                         your encrypted files
 	#
 	#
+	# script source settings:
+	# =======================
+	#
+	# The configuration can be done directly within the script source. Scroll down to
+	# the "USER CONFIGURATION" section within the script source. Configuration values
+	# set via environment variables take precedence over values set in the script
+	# source.
+	#
+	#
 	# environment variables:
 	# ======================
 	#
 	# All configuration values can alternatively be provided through environment
-	# variables and superseed the information provided within the script. Lists like
-	# EXTERNAL_STORAGES and USER_PASSWORDS must be provided as space-separated
-	# strings.
+	# variables and take precedence over settings provided within the script source.
+	# When using environment variables then the following information need to be taken
+	# into account:
 	#
-	# Example: if two user passwords shall be provided through an environment
-	#          variable then the corresponding value has to be set as:
+	# * Lists like EXTERNAL_STORAGES and USER_PASSWORDS must be provided as
+	#   space-separated strings.
 	#
-	#          USER_PASSWORDS="user1=password1 user2=password2"
+	#   Example: if two user passwords shall be provided through an environment
+	#            variable then the corresponding value has to be set as:
 	#
-	# It is possible to provide more than one password per user through USER_PASSWORDS
-	# in case you have several passwords and do not know which of them is correct.
-	# All of them will be tried out.
+	#            USER_PASSWORDS="user1=password1 user2=password2"
 	#
-	# Example: if two passwords for the same user shall be provided through an
-	#          environment variable then the corresponding value has to be set as:
+	# * It is possible to provide more than one password per user through
+	#   USER_PASSWORDS in case you have several passwords and do not know which of
+	#   them is correct. All of them will be tried out.
 	#
-	#          USER_PASSWORDS="user=password1 user=password2"
+	#   Example: if two passwords for the same user shall be provided through an
+	#            environment variable then the corresponding value has to be set as:
 	#
-	# The values INSTANCEID, RECOVERY_PASSWORD and SECRET are handled as
-	# space-separated lists in case you have several values and do not know which of
-	# them is correct. All of them will be tried out.
+	#            USER_PASSWORDS="user=password1 user=password2"
+	#
+	# * The values INSTANCEID, RECOVERY_PASSWORD and SECRET are handled as
+	#   space-separated lists in case you have several values and do not know which of
+	#   them is correct. All of them will be tried out.
 	#
 	#
 	# execution:
