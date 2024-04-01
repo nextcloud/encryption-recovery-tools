@@ -279,7 +279,7 @@
 	config("HEADER_VALUE_FALSE",                  "false");
 	config("HEADER_VALUE_TRUE",                   "true");
 
-	// key entrie s
+	// key entries
 	config("KEY_FILE",      "file");
 	config("KEY_ID",        "id");
 	config("KEY_NAME",      "name");
