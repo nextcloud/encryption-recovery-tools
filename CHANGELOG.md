@@ -3,6 +3,7 @@
 ## v??.?.? (2024-??-??)
 
 * improve configuration
+* be more verbose on startup
 
 ## v28.0.0 (2024-01-19)
 
