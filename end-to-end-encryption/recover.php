@@ -1305,17 +1305,26 @@
 	function decryptFiles($targetdir, $sourcepaths = null) {
 		$result = true;
 
+		// print some text so that users do not wait in front of a blank screen
+		println("INFO: decrypting private keys...");
+
 		// try to find and decrypt all available private keys
 		$privatekeys = decryptPrivateKeys();
 		if (0 >= count($privatekeys)) {
 			println("WARNING: COULD NOT DECRYPT ANY PRIVATE KEY");
 		}
 
+		// print some text so that users do not wait in front of a blank screen
+		println("INFO: decrypting meta data...");
+
 		// try to decrypt as many metadata as possible
 		$metadata = decryptMetaData($privatekeys);
 		if (0 >= count($metadata)) {
 			println("WARNING: COULD NOT DECRYPT ANY META DATA");
 		}
+
+		// print some text so that users do not wait in front of a blank screen
+		println("INFO: preparing sources, this could take a while...");
 
 		// collect all file sources
 		$sources = prepareSources($sourcepaths);
