@@ -2,28 +2,44 @@
 
 ## v??.?.? (2024-??-??)
 
-* improve configuration
-* be more verbose on startup
+* [improve description of how to configure the recover.php scripts (#41)](https://github.com/nextcloud/encryption-recovery-tools/pull/41)
+* [fix typo (#43)](https://github.com/nextcloud/encryption-recovery-tools/pull/43)
+* [be more verbose on startup (#44)](https://github.com/nextcloud/encryption-recovery-tools/pull/44)
+* [document debug mode (#45)](https://github.com/nextcloud/encryption-recovery-tools/pull/45)
+* [align CHANGELOG.md with the release notes (#46)](https://github.com/nextcloud/encryption-recovery-tools/pull/46)
 
 ## v28.0.0 (2024-01-19)
 
-* introduce decryption support for Owncloud 7 and later
-* introduce decryption support for the end-to-end encryption
-* heavily improve the path handling
-* introduce unit tests for most of the code
-* introduce support for environment variables
-* introduce help output for better user experience
-* support array of values in `INSTANCEID`
-* support array of values in `RECOVERY_PASSWORD`
-* support array of values in `SECRET`
-* support array of passwords per user in `USER_PASSWORDS`
-* prevent execution under Windows
-* implement RSA encryption with SHA-256 by hand to not introduce a dependency
+* [Introduce tests (#9)](https://github.com/nextcloud/encryption-recovery-tools/pull/9)
+* [add link of the test data repository to the readme (#11)](https://github.com/nextcloud/encryption-recovery-tools/pull/11)
+* [heavily improve path handling and restructure code (#12)](https://github.com/nextcloud/encryption-recovery-tools/pull/12)
+* [fix help text and README (#13)](https://github.com/nextcloud/encryption-recovery-tools/pull/13)
+* [print configuration to verbose debug log (#15)](https://github.com/nextcloud/encryption-recovery-tools/pull/15)
+* [Move testdata (#16)](https://github.com/nextcloud/encryption-recovery-tools/pull/16)
+* [improve decryptPrivateKey (#17)](https://github.com/nextcloud/encryption-recovery-tools/pull/17)
+* [support decryption infix #(18)](https://github.com/nextcloud/encryption-recovery-tools/pull/18)
+* [support several values for INSTANCEID, SECRET, RECOVERY_PASSWORD and USER_PASSWORDS (#19)](https://github.com/nextcloud/encryption-recovery-tools/pull/19)
+* [fix typo (#21)](https://github.com/nextcloud/encryption-recovery-tools/pull/21)
+* [introduce end-to-end encryption support (#23)](https://github.com/nextcloud/encryption-recovery-tools/pull/23)
+* [Fix default (#24)](https://github.com/nextcloud/encryption-recovery-tools/pull/24)
+* [fix license text (#25)](https://github.com/nextcloud/encryption-recovery-tools/pull/25)
+* [implement RSA decryption by hand to not be dependent on phpseclib (#26)](https://github.com/nextcloud/encryption-recovery-tools/pull/26)
+* [fix .gitattributes (#28)](https://github.com/nextcloud/encryption-recovery-tools/pull/28)
+* [support the decryption with multiple filekeys (#31)](https://github.com/nextcloud/encryption-recovery-tools/pull/31)
+* [fix debug message typo (#33)](https://github.com/nextcloud/encryption-recovery-tools/pull/33)
+* [fix description of sourcedir and sourcefile (#34)](https://github.com/nextcloud/encryption-recovery-tools/pull/34)
+* [fix comment typo (#35)](https://github.com/nextcloud/encryption-recovery-tools/pull/35)
+* [fix sonarcloud findings (#36)](https://github.com/nextcloud/encryption-recovery-tools/pull/36)
+* [verified support for Nextcloud 28.0.0 (#37)](https://github.com/nextcloud/encryption-recovery-tools/pull/37)
+* [update readme to 28.0.0 (#38)](https://github.com/nextcloud/encryption-recovery-tools/pull/38)
 
 ## v27.0.0 (2023-07-12)
 
-* The script now supports the updated encryption of Nextcloud 27 release.
-* It also supports the increased PBKDF2 iteration count in case the new `hash2` key format is used.
+* [updated readme and renamed rescue script (#2)](https://github.com/nextcloud/encryption-recovery-tools/pull/2)
+* [Fix typo in documentation (#3)](https://github.com/nextcloud/encryption-recovery-tools/pull/3)
+* [fixed typo and switched to one-sentence-per-line style in README.md (#6)](https://github.com/nextcloud/encryption-recovery-tools/pull/6)
+* [overhaul server-side-encryption support (#7)](https://github.com/nextcloud/encryption-recovery-tools/pull/7)
+* [fix PBKDF2 iteration selection (#8)](https://github.com/nextcloud/encryption-recovery-tools/pull/8)
 
 ## (2023-01-23)
 
