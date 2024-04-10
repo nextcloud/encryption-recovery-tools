@@ -104,12 +104,22 @@
 	#                                  config("EXTERNAL_STORAGES",
 	#                                         ["admin/sftp" => "/mnt/sshfs"]);
 	#
-	# SUPPORT_MISSING_HEADERS this is a value that tells the script if you have
-	# (OPTIONAL)              encrypted files without headers, this configuration is
-	#                         only needed if you have data from a VERY old Owncloud
-	#                         instance, you probably should not set this value as it
-	#                         will break unencrypted files that may live alongside
-	#                         your encrypted files
+	# SUPPORT_MISSING_HEADERS this is a boolean (true|false) option that tells the
+	# (OPTIONAL)              script if you have encrypted files without headers, this
+	#                         configuration is only needed if you have data from a
+	#                         very old Owncloud instance, you probably should not set
+	#                         this value as it will break unencrypted files that may
+	#                         live alongside your encrypted files
+	#
+	# DEBUG_MODE              this is a boolean (true|false) option to enable debug
+	# (OPTIONAL)              output that is more verbose than the default output,
+	#                         the debug mode will make the output less readable
+	#
+	# DEBUG_MODE_VERBOSE      this is a boolean (true|false) option to enable verbose
+	# (OPTIONAL)              debug output that is even more verbose than the debug
+	#                         output, the verbose debug mode will make the output even
+	#                         less readable, to enable DEBUG_MODE_VERBOSE you also
+	#                         have to enable DEBUG_MODE
 	#
 	#
 	# script source settings:

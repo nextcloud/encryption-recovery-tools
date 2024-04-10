@@ -14,6 +14,10 @@ In order to use the script you have to configure the given values below:
 
 * **`EXTERNAL_STORAGES`** - these are the mount paths of external folders, you have to set these values if you used external storages within your Nextcloud instance, each value represents an (external storage, mount path) pair and you can set as many pairs as necessary, the external storage name has to be written as found in the `DATADIRECTORY/files_encryption/keys/files/` folder, if the external storage belongs to a specific user then the name has to contain the username followed by a slash followed by the external storage name as found in the `DATADIRECTORY/$username/files_encryption/keys/files/` folder, the external storage has to be mounted by yourself and the corresponding mount path has to be set
 
+* **`DEBUG_MODE`** - this is a boolean (`true`|`false`) option to enable debug output that is more verbose than the default output, the debug mode will make the output less readable
+
+* **`DEBUG_MODE_VERBOSE`** - this is a boolean (`true`|`false`) option to enable verbose debug output that is **even more** verbose than the debug output, the verbose debug mode will make the output **even less** readable, to enable `DEBUG_MODE_VERBOSE` you **also** have to enable `DEBUG_MODE`
+
 ### Script Source Settings
 
 The configuration can be done directly within the script source.
