@@ -78,6 +78,16 @@
 	#                                  config("EXTERNAL_STORAGES",
 	#                                         ["admin/sftp" => "/mnt/sshfs"]);
 	#
+	# DEBUG_MODE              this is a boolean (true|false) option to enable debug
+	# (OPTIONAL)              output that is more verbose than the default output,
+	#                         the debug mode will make the output less readable
+	#
+	# DEBUG_MODE_VERBOSE      this is a boolean (true|false) option to enable verbose
+	# (OPTIONAL)              debug output that is even more verbose than the debug
+	#                         output, the verbose debug mode will make the output even
+	#                         less readable, to enable DEBUG_MODE_VERBOSE you also
+	#                         have to enable DEBUG_MODE
+	#
 	#
 	# script source settings:
 	# =======================
