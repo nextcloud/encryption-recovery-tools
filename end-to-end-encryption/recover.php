@@ -361,7 +361,7 @@
 					$tmp    = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 					$tmpkey = $subkey;
 
-					// execute the multipliation
+					// execute the multiplication
 					for ($index = 0x00; $index < strlen($block); $index++) {
 						for ($bit = 0x07; $bit >= 0x00; $bit--) {
 							// store for later use
