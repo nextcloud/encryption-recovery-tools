@@ -1825,22 +1825,22 @@
 	function main($arguments) {
 		$result = 0;
 
-		// prevent executiong on Windows, we will need function calls
-		// and path identification that are only tested on Linux
-		if ("Windows" !== PHP_OS_FAMILY) {
-			// check if we are expected to print the help
-			$printHelp = (1 >= count($arguments));
-			if (!$printHelp) {
-				foreach ($arguments as $argument) {
-					$printHelp = (("-h" === $argument) || ("--help" === $argument));
-					if ($printHelp) {
-						break;
-					}
+		// check if we are expected to print the help
+		$printHelp = (1 >= count($arguments));
+		if (!$printHelp) {
+			foreach ($arguments as $argument) {
+				$printHelp = (("-h" === $argument) || ("--help" === $argument));
+				if ($printHelp) {
+					break;
 				}
 			}
+		}
 
-			// check if need to show the help instead
-			if (!$printHelp) {
+		// check if need to show the help instead
+		if (!$printHelp) {
+			// prevent executiong on Windows, we will need function calls
+			// and path identification that are only tested on Linux / macOS
+			if ("Windows" !== PHP_OS_FAMILY) {
 				// prepare configuration values if not set
 				prepareConfig();
 
@@ -1865,7 +1865,9 @@
 					}
 
 					if ((null !== $targetdir) && is_dir($targetdir)) {
-						if (!decryptFiles($targetdir, $sourcepaths)) {
+						if (decryptFiles($targetdir, $sourcepaths)) {
+							debug("exiting");
+						} else {
 							println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
 							$result = 4;
 						}
@@ -1877,14 +1879,12 @@
 					println("ERROR: DATADIRECTORY DOES NOT EXIST");
 					$result = 2;
 				}
-
-				debug("exiting");
 			} else {
-				printHelp();
+				println("ERROR: DO NOT EXECUTE ON WINDOWS, USE THE WINDOWS SUBSYSTEM FOR LINUX INSTEAD");
+				$result = 1;
 			}
 		} else {
-			println("ERROR: DO NOT EXECUTE ON WINDOWS, USE THE WINDOWS SUBSYSTEM FOR LINUX INSTEAD");
-			$result = 1;
+			printHelp();
 		}
 
 		return $result;
