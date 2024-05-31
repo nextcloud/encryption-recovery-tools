@@ -2,6 +2,7 @@
 
 ## v29.0.0 (2024-05-31)
 
+* [add Nextcloud29 test (#50)](https://github.com/nextcloud/encryption-recovery-tools/pull/50)
 * [Nextcloud 29 release (#49)](https://github.com/nextcloud/encryption-recovery-tools/pull/49)
 * [improve startup sequence (#48)](https://github.com/nextcloud/encryption-recovery-tools/pull/48)
 * [fix another typo (#47)](https://github.com/nextcloud/encryption-recovery-tools/pull/47)
