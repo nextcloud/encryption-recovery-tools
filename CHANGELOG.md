@@ -1,7 +1,8 @@
 # Changelog
 
-## v??.?.? (2024-??-??)
+## v29.0.0 (2024-05-31)
 
+* [Nextcloud 29 release (#49)](https://github.com/nextcloud/encryption-recovery-tools/pull/49)
 * [improve startup sequence (#48)](https://github.com/nextcloud/encryption-recovery-tools/pull/48)
 * [fix another typo (#47)](https://github.com/nextcloud/encryption-recovery-tools/pull/47)
 * [improve description of how to configure the recover.php scripts (#41)](https://github.com/nextcloud/encryption-recovery-tools/pull/41)
