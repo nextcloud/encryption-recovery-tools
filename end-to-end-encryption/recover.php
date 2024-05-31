@@ -1468,66 +1468,73 @@
 	function main($arguments) {
 		$result = 0;
 
-		// prevent executiong on Windows, we will need function calls
-		// and path identification that are only tested on Linux
-		if ("Windows" !== PHP_OS_FAMILY) {
-			// check if we are expected to print the help
-			$printHelp = (1 >= count($arguments));
-			if (!$printHelp) {
-				foreach ($arguments as $argument) {
-					$printHelp = (("-h" === $argument) || ("--help" === $argument));
-					if ($printHelp) {
-						break;
-					}
+		// check if we are expected to print the help
+		$printHelp = (1 >= count($arguments));
+		if (!$printHelp) {
+			foreach ($arguments as $argument) {
+				$printHelp = (("-h" === $argument) || ("--help" === $argument));
+				if ($printHelp) {
+					break;
 				}
 			}
+		}
 
-			// check if need to show the help instead
-			if (!$printHelp) {
-				// prepare configuration values if not set
-				prepareConfig();
+		// check if need to show the help instead
+		if (!$printHelp) {
+			// prevent executiong on Windows, we will need function calls
+			// and path identification that are only tested on Linux and macOS
+			if ("Windows" !== PHP_OS_FAMILY) {
+				// prevent execution if GMP extension is not loaded,
+				// we need this for our re-implementation of RSA
+				if (extension_loaded("gmp")) {
+					// prepare configuration values if not set
+					prepareConfig();
 
-				debug("debug mode enabled");
-				debugConfig();
+					debug("debug mode enabled");
+					debugConfig();
 
-				// we want to work with an empty stat cache
-				clearstatcache(true);
+					// we want to work with an empty stat cache
+					clearstatcache(true);
 
-				if (is_dir(DATADIRECTORY)) {
-					$targetdir = null;
-					if (2 <= count($arguments)) {
-						$targetdir = normalizePath($arguments[1]);
-					}
-
-					$sourcepaths = [];
-					if (3 <= count($arguments)) {
-						$sourcepaths = array_slice($arguments, 2);
-						foreach ($sourcepaths as $key => $value) {
-							$sourcepaths[$key] = normalizePath($value);
+					if (is_dir(DATADIRECTORY)) {
+						$targetdir = null;
+						if (2 <= count($arguments)) {
+							$targetdir = normalizePath($arguments[1]);
 						}
-					}
 
-					if ((null !== $targetdir) && is_dir($targetdir)) {
-						if (!decryptFiles($targetdir, $sourcepaths)) {
-							println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+						$sourcepaths = [];
+						if (3 <= count($arguments)) {
+							$sourcepaths = array_slice($arguments, 2);
+							foreach ($sourcepaths as $key => $value) {
+								$sourcepaths[$key] = normalizePath($value);
+							}
+						}
+
+						if ((null !== $targetdir) && is_dir($targetdir)) {
+							if (decryptFiles($targetdir, $sourcepaths)) {
+								debug("exiting");
+							} else {
+								println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+								$result = 5;
+							}
+						} else {
+							println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
 							$result = 4;
 						}
 					} else {
-						println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
+						println("ERROR: DATADIRECTORY DOES NOT EXIST");
 						$result = 3;
 					}
 				} else {
-					println("ERROR: DATADIRECTORY DOES NOT EXIST");
+					println("ERROR: MANDATORY GMP EXTENSION IS NOT LOADED");
 					$result = 2;
 				}
-
-				debug("exiting");
 			} else {
-				printHelp();
+				println("ERROR: DO NOT EXECUTE ON WINDOWS, USE THE WINDOWS SUBSYSTEM FOR LINUX INSTEAD");
+				$result = 1;
 			}
 		} else {
-			println("ERROR: DO NOT EXECUTE ON WINDOWS, USE THE WINDOWS SUBSYSTEM FOR LINUX INSTEAD");
-			$result = 1;
+			printHelp();
 		}
 
 		return $result;

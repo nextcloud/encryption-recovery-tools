@@ -2,6 +2,8 @@
 
 ## v??.?.? (2024-??-??)
 
+* [improve startup sequence (#48)](https://github.com/nextcloud/encryption-recovery-tools/pull/48)
+* [fix another typo (#47)](https://github.com/nextcloud/encryption-recovery-tools/pull/47)
 * [improve description of how to configure the recover.php scripts (#41)](https://github.com/nextcloud/encryption-recovery-tools/pull/41)
 * [fix typo (#43)](https://github.com/nextcloud/encryption-recovery-tools/pull/43)
 * [be more verbose on startup (#44)](https://github.com/nextcloud/encryption-recovery-tools/pull/44)
