@@ -1,5 +1,9 @@
 # Changelog
 
+## v??.?.? (????-??-??)
+
+* [add support for metadata format version 2.0 (#51)](https://github.com/nextcloud/encryption-recovery-tools/pull/51)
+
 ## v29.0.0 (2024-05-31)
 
 * [add Nextcloud29 test (#50)](https://github.com/nextcloud/encryption-recovery-tools/pull/50)

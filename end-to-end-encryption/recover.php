@@ -209,21 +209,36 @@
 	config("KEY_MNEMONICS", "mnemonics");
 	config("KEY_NAME",      "name");
 
+	// intermediate entries
+	config("INTERMEDIATE_FILENAME", "filename");
+	config("INTERMEDIATE_KEY",      "key");
+	config("INTERMEDIATE_NONCE",	"nonce");
+
 	// metadata entries
-	config("METADATA_CHECKSUM",     "checksum");
-	config("METADATA_DIRECTORY_A",  "httpd/unix-directory");
-	config("METADATA_DIRECTORY_B",  "inode/directory");
-	config("METADATA_ENCRYPTED",    "encrypted");
-	config("METADATA_FILENAME",     "filename");
-	config("METADATA_FILES",        "files");
-	config("METADATA_IV",           "initializationVector");
-	config("METADATA_KEY",          "key");
-	config("METADATA_METADATA",     "metadata");
-	config("METADATA_METADATAKEY",  "metadataKey");
-	config("METADATA_METADATAKEYS", "metadataKeys");
-	config("METADATA_MIMETYPE",     "mimetype");
-	config("METADATA_TAG",          "authenticationTag");
-	config("METADATA_VERSION",      "version");
+	config("METADATA_CHECKSUM",             "checksum");
+	config("METADATA_CIPHERTEXT",           "ciphertext");
+	config("METADATA_DIRECTORY_A",          "httpd/unix-directory");
+	config("METADATA_DIRECTORY_B",          "inode/directory");
+	config("METADATA_ENCRYPTED",            "encrypted");
+	config("METADATA_ENCRYPTEDMETADATAKEY", "encryptedMetadataKey");
+	config("METADATA_FILENAME",             "filename");
+	config("METADATA_FILES",                "files");
+	config("METADATA_FOLDERS",              "folders");
+	config("METADATA_IV",                   "initializationVector");
+	config("METADATA_KEY",                  "key");
+	config("METADATA_METADATA",             "metadata");
+	config("METADATA_METADATAKEY",          "metadataKey");
+	config("METADATA_METADATAKEYS",         "metadataKeys");
+	config("METADATA_MIMETYPE",             "mimetype");
+	config("METADATA_NONCE",                "nonce");
+	config("METADATA_TAG",                  "authenticationTag");
+	config("METADATA_USERID",               "userId");
+	config("METADATA_USERS",                "users");
+	config("METADATA_VERSION",              "version");
+
+	config("VERSION_1",  1);
+	config("VERSION_12", 1.2);
+	config("VERSION_20", "2.0");
 
 	// ===== HELPER FUNCTIONS =====
 
@@ -327,12 +342,12 @@
 	}
 
 	// convert a GCM nonce to a CTR counter
-	function convertGCMtoCTR($iv, $key, $algo) {
+	function convertGCMtoCTR($nonce, $key, $algo) {
 		$result = null;
 
 		// check special case first
-		if (0x0C === strlen($iv)) {
-			$result = $iv."\x00\x00\x00\x01";
+		if (0x0C === strlen($nonce)) {
+			$result = $nonce."\x00\x00\x00\x01";
 		} else {
 			// produce GHASH of the nonce
 			$subkey = openssl_encrypt("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
@@ -341,23 +356,23 @@
 			                          OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
 			if (false !== $subkey) {
 				// store for later use
-				$ivlen = strlen($iv);
+				$noncelen = strlen($nonce);
 
-				// pad iv to 128 bit block
-				if (0x00 !== ($ivlen % 0x10)) {
-					$iv = $iv.str_repeat("\x00", 0x10 - ($ivlen % 0x10));
+				// pad nonce to 128 bit block
+				if (0x00 !== ($noncelen % 0x10)) {
+					$nonce = $nonce.str_repeat("\x00", 0x10 - ($noncelen % 0x10));
 				}
 
 				// append zero padding
-				$iv = $iv."\x00\x00\x00\x00\x00\x00\x00\x00";
+				$nonce = $nonce."\x00\x00\x00\x00\x00\x00\x00\x00";
 
-				// append 64-bit iv length
-				$iv = $iv."\x00\x00\x00\x00".pack("N", ($ivlen << 0x03));
+				// append 64-bit nonce length
+				$nonce = $nonce."\x00\x00\x00\x00".pack("N", ($noncelen << 0x03));
 
 				// actual GHASH calculation
 				$result = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
-				for ($i = 0x00; $i < strlen($iv)/0x10; $i++) {
-					$block  = $result ^ substr($iv, $i * 0x10, 0x10);
+				for ($i = 0x00; $i < strlen($nonce)/0x10; $i++) {
+					$block  = $result ^ substr($nonce, $i * 0x10, 0x10);
 					$tmp    = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 					$tmpkey = $subkey;
 
@@ -420,66 +435,88 @@
 	}
 
 	// parse a metadata file and try to decrypt it
-	function decryptMetaDate($file, $privatekeys) {
+	function decryptMetaDate($json, $privatekeys, $metadatakeys = []) {
 		$result = false;
 
-		$json = json_decode($file,
-		                    true,
-		                    4,
-		                    JSON_OBJECT_AS_ARRAY);
-		if (is_array($json) &&
-		    array_key_exists(METADATA_FILES,    $json) &&
-		    array_key_exists(METADATA_METADATA, $json) &&
-		    is_array($json[METADATA_FILES])            &&
-		    is_array($json[METADATA_METADATA])) {
-			// read the metadata keys
-			$metadatakeys = [];
-			if (array_key_exists(METADATA_METADATAKEY, $json[METADATA_METADATA])) {
-				$metadatakeys[] = base64_decode($json[METADATA_METADATA][METADATA_METADATAKEY]);
-			} elseif (array_key_exists(METADATA_METADATAKEYS, $json[METADATA_METADATA])) {
-				foreach ($json[METADATA_METADATA][METADATA_METADATAKEYS] as $element) {
-					$metadatakeys[] = base64_decode($element);
-				}
-			}
+		if (is_array($json)) {
+			// check if this is a know metadata format version
+			$version = extractMetaDataVersion($json);
 
+			if (0 < $version) {
+				// try to find the metadatakeys in this specific metadata file
+				$metadatakeys = array_merge($metadatakeys, extractMetaDataKeys($json, 1)); // format version 1 has one key per metadata file
 
-			// try to decrypt the metadata key
-			$keys = [];
-			foreach ($metadatakeys as $element) {
-				// prepare single key
-				$key = false;
+				// try to decrypt the metadata key
+				$keys = [];
+				foreach ($metadatakeys as $element) {
+					// prepare single key
+					$key = false;
 
-				foreach ($privatekeys as $privatekey) {
-					$key = rsaDecrypt($element,
-					                  $privatekey,
-					                  "sha256");
-					if (false !== $key) {
-						// yes, this really is base64-encoded several times
-						$keys[] = base64_decode(base64_decode($key));
-					} else {
-						debug("metadata key could not be decrypted...");
-					}
+					foreach ($privatekeys as $privatekey) {
+						$key = rsaDecrypt($element,
+						                  $privatekey,
+						                  "sha256");
+						if (false !== $key) {
+							// format version 1 used additional encoding
+							if (1 === $version) {
+								// yes, this really is base64-encoded several times
+								$key = base64_decode(base64_decode($key));
+							}
+							$keys[] = $key;
+						} else {
+							debug("metadata key could not be decrypted...");
+						}
 
-					// exit the lopp
-					if (false !== $key) {
-						break;
+						// exit the lopp
+						if (false !== $key) {
+							break;
+						}
 					}
 				}
+
+				// proceed if we decrypted at least one metadata key
+				if (0 < count($keys)) {
+					switch ($version) {
+						case 1:
+							$result = decryptMetaDateV1($json, $keys);
+							break;
+
+						case 2:
+							$result = decryptMetaDateV2($json, $keys);
+							break;
+
+						default:
+							// keep $result as it is
+					}
+				} else {
+					debug("metadata keys could not be decrypted");
+				}
+			} else {
+				debug("metadata have unknown version");
 			}
+		} else {
+			debug("metadata are not JSON encoded");
+		}
 
-			// proceed if we decrypted at least one metadata key
-			if (0 < count($keys)) {
-				$result = [];
+		return $result;
+	}
 
-				foreach ($json[METADATA_FILES] as $filename => $file) {
-					if (array_key_exists(METADATA_ENCRYPTED, $file) &&
-					    array_key_exists(METADATA_IV,        $file)) {
+	// parse a format version 1 metadata file and try to decrypt it
+	function decryptMetaDateV1($json, $keys) {
+		$result = [];
+
+		if (is_array($json)) {
+			if (array_key_exists(METADATA_FILES, $json) &&
+			    is_array($json[METADATA_FILES])) {
+				foreach ($json[METADATA_FILES] as $filename => $element) {
+					if (array_key_exists(METADATA_ENCRYPTED, $element) &&
+					    array_key_exists(METADATA_IV,        $element)) {
 						// extract parts of the metadata
 						$parts = null;
-						if (false !== strpos($file[METADATA_ENCRYPTED], "|")) {
-							$parts = explode("|", $file[METADATA_ENCRYPTED]);
-						} elseif (false !== strpos($file[METADATA_ENCRYPTED], "fA==")) {
-							$parts = explode("fA==", $file[METADATA_ENCRYPTED]);
+						if (false !== strpos($element[METADATA_ENCRYPTED], "|")) {
+							$parts = explode("|", $element[METADATA_ENCRYPTED]);
+						} elseif (false !== strpos($element[METADATA_ENCRYPTED], "fA==")) {
+							$parts = explode("fA==", $element[METADATA_ENCRYPTED]);
 						}
 
 						// we at least need two parts
@@ -488,43 +525,51 @@
 							foreach ($keys as $key) {
 								// parse the metadata structure
 								$ciphertext = substr(base64_decode($parts[0]), 0, -TAGSIZE);
-								$iv         = base64_decode($parts[1]);
+								$nonce      = base64_decode($parts[1]);
 								$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
 
 								// migrate GCM nonce to CTR counter,
 								// we don't use GCM so that broken
 								// integrity data do not break the
 								// decryption
-								$iv = convertGCMtoCTR($iv, $key, "aes-128-ecb");
+								$nonce = convertGCMtoCTR($nonce, $key, "aes-128-ecb");
 
 								// decrypt metadata
 								$metadata = openssl_decrypt($ciphertext,
 								                            "aes-128-ctr",
 								                            $key,
 								                            OPENSSL_RAW_DATA,
-								                            $iv);
+								                            $nonce);
 								if (false !== $metadata) {
 									$metadata = base64_decode($metadata);
 									if (false !== $metadata) {
-										$metadata = json_decode($metadata,
-										                        true,
-										                        2,
-										                        JSON_OBJECT_AS_ARRAY);
-										if (is_array($metadata)) {
-											// merge the unencrypted and decrypted metadata
-											$result[$filename] = array_merge($file, $metadata);
+										$metadata = json_decode($metadata, true, 2, JSON_OBJECT_AS_ARRAY);
 
-											// prepare metadata
-											foreach ([METADATA_IV, METADATA_KEY, METADATA_TAG] as $element) {
-												if (array_key_exists($element, $result[$filename])) {
-													$result[$filename][$element] = base64_decode($result[$filename][$element]);
+										// check the structure of the decrypted metadata
+										if (is_array($metadata) &&
+										    array_key_exists(METADATA_FILENAME, $metadata) &&
+										    array_key_exists(METADATA_MIMETYPE, $metadata)) {
+											// check if this is a folder
+											if ((METADATA_DIRECTORY_A !== $metadata[METADATA_MIMETYPE]) &&
+											    (METADATA_DIRECTORY_B !== $metadata[METADATA_MIMETYPE])) {
+												// we need the key of the file
+												if (array_key_exists(METADATA_KEY, $metadata)) {
+													$result[$filename] = [INTERMEDIATE_FILENAME => $metadata[METADATA_FILENAME],
+													                      INTERMEDIATE_KEY      => base64_decode($metadata[METADATA_KEY]),
+													                      INTERMEDIATE_NONCE    => base64_decode($element[METADATA_IV])];
+												} else {
+													debug("decrypted file entry does not contain a key");
 												}
+											} else {
+												$result[$filename] = [INTERMEDIATE_FILENAME => $metadata[METADATA_FILENAME]];
 											}
 
 											// continue with the next file
-											break;
+											if (array_key_exists($filename, $result)) {
+												break;
+											}
 										} else {
-											debug("decrypted metadata are not JSON-encoded");
+											debug("decrypted metadata have wrong structure");
 										}
 									} else {
 										debug("decrypted metadata are not base64-encoded");
@@ -541,10 +586,96 @@
 					}
 				}
 			} else {
-				debug("metadata key could not be decrypted");
+				debug("metadata file list has wrong structure");
 			}
 		} else {
-			debug("metadata file has wrong structure");
+			debug("metadata are not JSON encoded");
+		}
+
+
+		return $result;
+	}
+
+	// parse a format version 2 metadata file and try to decrypt it
+	function decryptMetaDateV2($json, $keys) {
+		$result = [];
+
+		if (is_array($json)) {
+			if (array_key_exists(METADATA_METADATA,   $json) &&
+			    array_key_exists(METADATA_CIPHERTEXT, $json[METADATA_METADATA]) &&
+			    array_key_exists(METADATA_NONCE,      $json[METADATA_METADATA])) {
+				// extract parts of the metadata
+				$parts = explode("|", $json[METADATA_METADATA][METADATA_CIPHERTEXT]);
+
+				// we at least need two parts
+				if ((is_array($parts)) && (2 <= count($parts))) {
+					// try all metadata keys
+					foreach ($keys as $key) {
+						// parse the metadata structure
+						$ciphertext = substr(base64_decode($parts[0]), 0, -TAGSIZE);
+						$nonce      = base64_decode($parts[1]);
+						$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
+
+						// migrate GCM nonce to CTR counter,
+						// we don't use GCM so that broken
+						// integrity data do not break the
+						// decryption
+						$nonce = convertGCMtoCTR($nonce, $key, "aes-128-ecb");
+
+						// decrypt metadata
+						$metadata = openssl_decrypt($ciphertext,
+						                            "aes-128-ctr",
+						                            $key,
+						                            OPENSSL_RAW_DATA,
+						                            $nonce);
+						if (false !== $metadata) {
+							// GZIP-decompress metadata
+							$metadata = gzdecode($metadata);
+							if (false !== $metadata) {
+								$metadata = json_decode($metadata, true, 4, JSON_OBJECT_AS_ARRAY);
+
+								// check the structure of the decrypted metadata
+								if (is_array($metadata) &&
+								    array_key_exists(METADATA_FILES, $metadata) &&
+								    is_array($metadata[METADATA_FILES]) &&
+								    array_key_exists(METADATA_FOLDERS, $metadata) &&
+								    is_array($metadata[METADATA_FOLDERS])) {
+									// handle the file entries
+									foreach ($metadata[METADATA_FILES] as $filename => $element) {
+										if (array_key_exists(METADATA_FILENAME, $element) &&
+										    array_key_exists(METADATA_KEY,      $element) &&
+										    array_key_exists(METADATA_NONCE,    $element)) {
+											$result[$filename] = [INTERMEDIATE_FILENAME => $element[METADATA_FILENAME],
+											                      INTERMEDIATE_KEY      => base64_decode($element[METADATA_KEY]),
+											                      INTERMEDIATE_NONCE    => base64_decode($element[METADATA_NONCE])];
+										}
+									}
+
+									// handle the folder entries
+									foreach ($metadata[METADATA_FOLDERS] as $filename => $element) {
+										$result[$filename] = [INTERMEDIATE_FILENAME => $element];
+									}
+
+									// we got everything there is
+									break;
+								} else {
+									debug("decrypted metadata have wrong structure");
+								}
+							} else {
+								debug("decrypted metadata are not GZIP compressed");
+							}
+						} else {
+							debug("metadata could not be decrypted: ".openssl_error_string());
+						}
+					}
+				} else {
+					debug("encrypted metadata have wrong structure");
+				}
+			} else {
+				debug("metadata entry has wrong structure");
+			}
+		} else {
+			debug("metadata are not JSON encoded");
 		}
 
 		return $result;
@@ -555,10 +686,22 @@
 		$result = [];
 
 		$files = searchMetaData();
+
+		// try to find the metadatakeys in all metadata files
+		$metadatakeys = [];
 		foreach ($files as $filename) {
 			$file = file_get_contents($filename);
 			if (false !== $file) {
-				$metadate = decryptMetaDate($file, $privatekeys);
+				$json         = json_decode($file, true, 4, JSON_OBJECT_AS_ARRAY);
+				$metadatakeys = array_merge($metadatakeys, extractMetaDataKeys($json, 2)); // format version 2 has one metadata file with all keys
+			}
+		}
+
+		foreach ($files as $filename) {
+			$file = file_get_contents($filename);
+			if (false !== $file) {
+				$json     = json_decode($file, true, 4, JSON_OBJECT_AS_ARRAY);
+				$metadate = decryptMetaDate($json, $privatekeys, $metadatakeys);
 				if (false !== $metadate) {
 					$result = array_merge($result, $metadate);
 
@@ -586,7 +729,7 @@
 		if ((is_array($parts)) && (3 <= count($parts))) {
 			// parse the private key structure
 			$ciphertext = substr(base64_decode($parts[0]), 0, -TAGSIZE);
-			$iv         = base64_decode($parts[1]);
+			$nonce      = base64_decode($parts[1]);
 			$salt       = base64_decode($parts[2]);
 			$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
 
@@ -602,14 +745,14 @@
 			// we don't use GCM so that broken
 			// integrity data do not break the
 			// decryption
-			$iv = convertGCMtoCTR($iv, $mnemonic, "aes-256-ecb");
+			$nonce = convertGCMtoCTR($nonce, $mnemonic, "aes-256-ecb");
 
 			// decrypt private key
 			$privatekey = openssl_decrypt($ciphertext,
 			                              "aes-256-ctr",
 			                              $mnemonic,
 			                              OPENSSL_RAW_DATA,
-			                              $iv);
+			                              $nonce);
 			if (false !== $privatekey) {
 				// base64-decode again just for good measure
 				$privatekey = base64_decode($privatekey);
@@ -652,6 +795,66 @@
 
 						debug("loaded private key for ".$key[KEY_NAME]);
 					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	// try to find the metadatakeys in the metadata file
+	function extractMetaDataKeys($json, $version) {
+		$result = [];
+
+		if (is_array($json)) {
+			switch ($version) {
+				case 1:
+					if (array_key_exists(METADATA_METADATA, $json) &&
+					    is_array($json[METADATA_METADATA])) {
+						if (array_key_exists(METADATA_METADATAKEY, $json[METADATA_METADATA])) {
+							$result[] = base64_decode($json[METADATA_METADATA][METADATA_METADATAKEY]);
+						} elseif (array_key_exists(METADATA_METADATAKEYS, $json[METADATA_METADATA]) &&
+						        is_array($json[METADATA_METADATA][METADATA_METADATAKEYS])) {
+							foreach ($json[METADATA_METADATA][METADATA_METADATAKEYS] as $element) {
+								$result[] = base64_decode($element);
+							}
+						}
+                                        }
+					break;
+
+				case 2:
+					if (array_key_exists(METADATA_USERS, $json) &&
+					    is_array($json[METADATA_USERS])) {
+						foreach ($json[METADATA_USERS] as $user) {
+							if (array_key_exists(METADATA_ENCRYPTEDMETADATAKEY, $user)) {
+								$result[] = base64_decode($user[METADATA_ENCRYPTEDMETADATAKEY]);
+							}
+						}
+					}
+					break;
+
+				default:
+					// keep $result as it is
+			}
+		}
+
+		return $result;
+	}
+
+	// get the rough structure version of a metadata file
+	function extractMetaDataVersion($json) {
+		$result = 0;
+
+		if (is_array($json)) {
+			if (array_key_exists(METADATA_VERSION, $json) &&
+			    (VERSION_20 === $json[METADATA_VERSION])) {
+				$result = 2;
+			} else {
+				if (array_key_exists(METADATA_METADATA, $json) &&
+				    array_key_exists(METADATA_VERSION,  $json[METADATA_METADATA]) &&
+				    ((VERSION_1  === $json[METADATA_METADATA][METADATA_VERSION]) ||
+				     (VERSION_12 === $json[METADATA_METADATA][METADATA_VERSION]))) {
+					$result = 1;
 				}
 			}
 		}
@@ -1206,8 +1409,8 @@
 	function decryptFile($filename, $metadata, $targetname) {
 		$result = false;
 
-		if ((array_key_exists(METADATA_IV, $metadata)) &&
-		    (array_key_exists(METADATA_KEY, $metadata))) {
+		if ((array_key_exists(INTERMEDIATE_KEY,   $metadata)) &&
+		    (array_key_exists(INTERMEDIATE_NONCE, $metadata))) {
 			// try to set file times later on
 			$fileatime = fileatime($filename);
 			$filemtime = filemtime($filename);
@@ -1219,8 +1422,8 @@
 
 				$block      = "";
 				$buffer     = "";
-				$iv         = convertGCMtoCTR($metadata[METADATA_IV], $metadata[METADATA_KEY], "aes-128-ecb");
-				$key        = $metadata[METADATA_KEY];
+				$key        = $metadata[INTERMEDIATE_KEY];
+				$nonce      = convertGCMtoCTR($metadata[INTERMEDIATE_NONCE], $metadata[INTERMEDIATE_KEY], "aes-128-ecb");
 				$plain      = "";
 				$sourcesize = filesize($filename);
 				$targetsize = 0;
@@ -1245,7 +1448,7 @@
 							                         "aes-128-ctr",
 							                         $key,
 							                         OPENSSL_RAW_DATA,
-							                         $iv);
+							                         $nonce);
 							if (false !== $plain) {
 								// write fails when fewer bytes than string length are written
 								$result     = $result && (strlen($plain) === fwrite($targetfile, $plain));
@@ -1257,7 +1460,7 @@
 
 							// increment counter,
 							// 16 = AES-128 block length
-							$iv = incrementCounter($iv, BLOCKSIZE/16);
+							$nonce = incrementCounter($nonce, BLOCKSIZE/16);
 						}
 					}
 				} while (!feof($sourcefile));
@@ -1278,7 +1481,7 @@
 					                         "aes-128-ctr",
 					                         $key,
 					                         OPENSSL_RAW_DATA,
-					                         $iv);
+					                         $nonce);
 					if (false !== $plain) {
 						// write fails when fewer bytes than string length are written
 						$result     = $result && (strlen($plain) === fwrite($targetfile, $plain));
@@ -1290,7 +1493,7 @@
 
 					// increment counter,
 					// 16 = AES-128 block length
-					$iv = incrementCounter($iv, BLOCKSIZE/16);
+					$nonce = incrementCounter($nonce, BLOCKSIZE/16);
 				}
 			} finally {
 				fclose($sourcefile);
@@ -1381,20 +1584,21 @@
 					// the original path components in the metadats
 					foreach ($subpath as $index => $element) {
 						// do some structural checks
-						if (array_key_exists($element,          $metadata)           &&
-						    array_key_exists(METADATA_FILENAME, $metadata[$element]) &&
-						    array_key_exists(METADATA_MIMETYPE, $metadata[$element])) {
+						if (array_key_exists($element,              $metadata) &&
+						    array_key_exists(INTERMEDIATE_FILENAME, $metadata[$element])) {
 							// handle directories
 							if ($index < (count($subpath)-1)) {
-								if ((METADATA_DIRECTORY_A === $metadata[$element][METADATA_MIMETYPE]) ||
-								    (METADATA_DIRECTORY_B === $metadata[$element][METADATA_MIMETYPE])) {
-									$subpath[$index] = $metadata[$element][METADATA_FILENAME];
+								// folders don't have a key or nonce
+								if (!array_key_exists(INTERMEDIATE_KEY,   $metadata[$element]) &&
+								    !array_key_exists(INTERMEDIATE_NONCE, $metadata[$element])) {
+									$subpath[$index] = $metadata[$element][INTERMEDIATE_FILENAME];
 								}
 							} else {
-								if ((METADATA_DIRECTORY_A !== $metadata[$element][METADATA_MIMETYPE]) &&
-								    (METADATA_DIRECTORY_B !== $metadata[$element][METADATA_MIMETYPE])) {
+								// files have a key and nonce
+								if (array_key_exists(INTERMEDIATE_KEY,   $metadata[$element]) &&
+								    array_key_exists(INTERMEDIATE_NONCE, $metadata[$element])) {
 									$filemeta        = $metadata[$element];
-									$subpath[$index] = $metadata[$element][METADATA_FILENAME];
+									$subpath[$index] = $metadata[$element][INTERMEDIATE_FILENAME];
 								}
 							}
 						}
@@ -1487,46 +1691,53 @@
 				// prevent execution if GMP extension is not loaded,
 				// we need this for our re-implementation of RSA
 				if (extension_loaded("gmp")) {
-					// prepare configuration values if not set
-					prepareConfig();
+					// prevent execution if ZLIB extension is not loaded,
+					// we need this for the format version 2 of the metadata
+					if (extension_loaded("zlib")) {
+						// prepare configuration values if not set
+						prepareConfig();
 
-					debug("debug mode enabled");
-					debugConfig();
+						debug("debug mode enabled");
+						debugConfig();
 
-					// we want to work with an empty stat cache
-					clearstatcache(true);
+						// we want to work with an empty stat cache
+						clearstatcache(true);
 
-					if (is_dir(DATADIRECTORY)) {
-						$targetdir = null;
-						if (2 <= count($arguments)) {
-							$targetdir = normalizePath($arguments[1]);
-						}
-
-						$sourcepaths = [];
-						if (3 <= count($arguments)) {
-							$sourcepaths = array_slice($arguments, 2);
-							foreach ($sourcepaths as $key => $value) {
-								$sourcepaths[$key] = normalizePath($value);
+						if (is_dir(DATADIRECTORY)) {
+							$targetdir = null;
+							if (2 <= count($arguments)) {
+								$targetdir = normalizePath($arguments[1]);
 							}
-						}
 
-						if ((null !== $targetdir) && is_dir($targetdir)) {
-							if (decryptFiles($targetdir, $sourcepaths)) {
-								debug("exiting");
+							$sourcepaths = [];
+							if (3 <= count($arguments)) {
+								$sourcepaths = array_slice($arguments, 2);
+								foreach ($sourcepaths as $key => $value) {
+									$sourcepaths[$key] = normalizePath($value);
+								}
+							}
+
+							if ((null !== $targetdir) && is_dir($targetdir)) {
+								if (decryptFiles($targetdir, $sourcepaths)) {
+									debug("exiting");
+								} else {
+									println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+									$result = 6;
+								}
 							} else {
-								println("ERROR: AN ERROR OCCURED DURING THE DECRYPTION");
+								println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
 								$result = 5;
 							}
 						} else {
-							println("ERROR: TARGETDIR NOT GIVEN OR DOES NOT EXIST");
+							println("ERROR: DATADIRECTORY DOES NOT EXIST");
 							$result = 4;
 						}
 					} else {
-						println("ERROR: DATADIRECTORY DOES NOT EXIST");
+						println("ERROR: MANDATORY GMP EXTENSION IS NOT LOADED");
 						$result = 3;
 					}
 				} else {
-					println("ERROR: MANDATORY GMP EXTENSION IS NOT LOADED");
+					println("ERROR: MANDATORY ZLIB EXTENSION IS NOT LOADED");
 					$result = 2;
 				}
 			} else {
