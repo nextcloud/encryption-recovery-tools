@@ -1809,6 +1809,7 @@
 						}
 					} else {
 						println("SKIP: $targetname ALREADY EXISTS");
+						$result = true;
 					}
 				} else {
 					debug("skipping this item because it is not a file...");
