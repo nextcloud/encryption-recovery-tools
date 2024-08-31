@@ -188,7 +188,7 @@
 	// ===== SYSTEM DEFINITIONS =====
 
 	// encryption definitions
-	config("BLOCKSIZE", 1024);
+	config("BLOCKSIZE", 8192);
 	config("TAGSIZE",     16);
 
 	// prefix of decrypted external storages
@@ -878,12 +878,10 @@
 	function incrementCounter($counter, $increment = 0x01) {
 		$result = $counter;
 
-		if (is_string($result)   &&
-		    (0x00 <= $increment) &&
-		    (0xFF >= $increment)) {
+		if (is_string($result) && is_int($increment) && (0x00 <= $increment)) {
 			// add increment to the result
 			for ($index = strlen($result)-0x01; $index >= 0x00; $index--) {
-				$tmp            = (((ord($result[$index]) + $increment) >> 0x08) & 0xFF);
+				$tmp            = ((ord($result[$index]) + $increment) >> 0x08);
 				$result[$index] = chr((ord($result[$index]) + $increment) & 0xFF);
 				$increment      = $tmp;
 			}
