@@ -6,18 +6,19 @@
 * [add skip_files tests (#53)](https://github.com/nextcloud/encryption-recovery-tools/pull/53)
 * [update CHANGELOG.md (#54)](https://github.com/nextcloud/encryption-recovery-tools/pull/54)
 * [increase decryption block size (#55)](https://github.com/nextcloud/encryption-recovery-tools/pull/55)
+* [improve config type checks (#58)](https://github.com/nextcloud/encryption-recovery-tools/pull/58)
 
 ## v29.0.0 (2024-05-31)
 
-* [add Nextcloud29 test (#50)](https://github.com/nextcloud/encryption-recovery-tools/pull/50)
-* [Nextcloud 29 release (#49)](https://github.com/nextcloud/encryption-recovery-tools/pull/49)
-* [improve startup sequence (#48)](https://github.com/nextcloud/encryption-recovery-tools/pull/48)
-* [fix another typo (#47)](https://github.com/nextcloud/encryption-recovery-tools/pull/47)
 * [improve description of how to configure the recover.php scripts (#41)](https://github.com/nextcloud/encryption-recovery-tools/pull/41)
 * [fix typo (#43)](https://github.com/nextcloud/encryption-recovery-tools/pull/43)
 * [be more verbose on startup (#44)](https://github.com/nextcloud/encryption-recovery-tools/pull/44)
 * [document debug mode (#45)](https://github.com/nextcloud/encryption-recovery-tools/pull/45)
 * [align CHANGELOG.md with the release notes (#46)](https://github.com/nextcloud/encryption-recovery-tools/pull/46)
+* [fix another typo (#47)](https://github.com/nextcloud/encryption-recovery-tools/pull/47)
+* [improve startup sequence (#48)](https://github.com/nextcloud/encryption-recovery-tools/pull/48)
+* [Nextcloud 29 release (#49)](https://github.com/nextcloud/encryption-recovery-tools/pull/49)
+* [add Nextcloud29 test (#50)](https://github.com/nextcloud/encryption-recovery-tools/pull/50)
 
 ## v28.0.0 (2024-01-19)
 
