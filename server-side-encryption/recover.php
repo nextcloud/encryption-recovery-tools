@@ -323,6 +323,14 @@
 			if (false !== getenv($key)) {
 				// handle specific environment variables differently
 				switch ($key) {
+					// handle as integers
+					case "BLOCKSIZE":
+						$tmp = filter_var(getenv($key), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+						if ((null !== $tmp) && (0 < $tmp)) {
+							$value = $tmp;
+						}
+						break;
+
 					// handle as associative array of integers
 					case "CIPHER_SUPPORT":
 						$value   = [];
@@ -331,8 +339,8 @@
 							if (false !== strpos($entry, "=")) {
 								$left  = substr($entry, 0, strpos($entry, "="));
 								$right = substr($entry, strpos($entry, "=")+1);
-								$right = filter_var($right, FILTER_VALIDATE_INT, ["flags" => FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX]);
-								if (false !== $right) {
+								$right = filter_var($right, FILTER_VALIDATE_INT, FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX | FILTER_NULL_ON_FAILURE);
+								if ((null !== $right) && (0 < $right)) {
 									$value[$left] = $right;
 								}
 							}
@@ -343,7 +351,10 @@
 					case "DEBUG_MODE":
 					case "DEBUG_MODE_VERBOSE":
 					case "SUPPORT_MISSING_HEADERS":
-						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+						$tmp = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+						if (null !== $tmp) {
+							$value = $tmp;
+						}
 						break;
 
 					// handle as associative array of strings

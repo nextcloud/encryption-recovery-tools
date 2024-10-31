@@ -57,4 +57,30 @@ final class config extends PHPUnit\Framework\TestCase
 		config("USER_MNEMONICS", []);
 		self::assertSame($expected, USER_MNEMONICS);
 	}
+
+	public function test_putenv_overwrite_float() {
+		define("TESTING", true);
+
+		$expected = 1.2;
+		putenv("VERSION_12=K");
+
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
+
+		self::assertSame($expected, VERSION_12);
+	}
+
+	public function test_putenv_overwrite_int() {
+		define("TESTING", true);
+
+		$expected1 = 8192;
+		putenv("BLOCKSIZE=K");
+
+		$expected2 = 16;
+		putenv("TAGSIZE=K");
+
+		include(__DIR__."/../../../end-to-end-encryption/recover.php");
+
+		self::assertSame($expected1, BLOCKSIZE);
+		self::assertSame($expected2, TAGSIZE);
+	}
 }
