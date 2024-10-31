@@ -249,6 +249,16 @@
 			if (false !== getenv($key)) {
 				// handle specific environment variables differently
 				switch ($key) {
+					// handle as integers
+					case "BLOCKSIZE":
+					case "TAGSIZE":
+					case "VERSION_1":
+						$tmp = filter_var(getenv($key), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+						if ((null !== $tmp) && (0 < $tmp)) {
+							$value = $tmp;
+						}
+						break;
+
 					// handle as arrays
 					case "EXTERNAL_STORAGES":
 						$value   = [];
@@ -265,7 +275,10 @@
 					// handle as booleans
 					case "DEBUG_MODE":
 					case "DEBUG_MODE_VERBOSE":
-						$value = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN);
+						$tmp = filter_var(getenv($key), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+						if (null !== $tmp) {
+							$value = $tmp;
+						}
 						break;
 
 					// handle user mnemonics specifically
@@ -282,6 +295,14 @@
 									$value[$left] = [$right];
 								}
 							}
+						}
+						break;
+
+					// handle as float
+					case "VERSION_12":
+						$tmp = filter_var(getenv($key), FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+						if ((null !== $tmp) && (0 < $tmp)) {
+							$value = $tmp;
 						}
 						break;
 

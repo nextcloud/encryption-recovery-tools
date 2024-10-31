@@ -95,6 +95,17 @@ final class config extends PHPUnit\Framework\TestCase {
 		self::assertSame($expected, CIPHER_SUPPORT);
 	}
 
+	public function test_putenv_overwrite_int() {
+		define("TESTING", true);
+
+		$expected = 8192;
+		putenv("BLOCKSIZE=K");
+
+		include(__DIR__."/../../../server-side-encryption/recover.php");
+
+		self::assertSame($expected, BLOCKSIZE);
+	}
+
 	public function test_putenv_overwrite_oct() {
 		define("TESTING", true);
 
