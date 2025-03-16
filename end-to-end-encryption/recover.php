@@ -754,44 +754,64 @@
 			$salt       = base64_decode($parts[2]);
 			$tag        = substr(base64_decode($parts[0]), -TAGSIZE);
 
-			// derive actual secret
-			$mnemonic = hash_pbkdf2("sha1",
-			                        $mnemonic,
-			                        $salt,
-			                        1024,
-			                        32,
-			                        true);
+			// try to decrypt private key with different methods
+			$methods = [["algorithm" => "sha256", "iterations" => 600000],
+                                    ["algorithm" => "sha1",   "iterations" => 600000],
+                                    ["algorithm" => "sha1",   "iterations" =>   1024]];
+                        foreach ($methods as $method) {
+				// take method parameters
+				$algorithm  = $method["algorithm"];
+				$iterations = $method["iterations"];
 
-			// migrate GCM nonce to CTR counter,
-			// we don't use GCM so that broken
-			// integrity data do not break the
-			// decryption
-			$nonce = convertGCMtoCTR($nonce, $mnemonic, "aes-256-ecb");
+				// derive actual secret
+				$secret = hash_pbkdf2($algorithm,
+				                      $mnemonic,
+				                      $salt,
+				                      $iterations,
+				                      32,
+				                      true);
 
-			// decrypt private key
-			$privatekey = openssl_decrypt($ciphertext,
-			                              "aes-256-ctr",
-			                              $mnemonic,
-			                              OPENSSL_RAW_DATA,
-			                              $nonce);
-			if (false !== $privatekey) {
-				// base64-decode again just for good measure
-				$privatekey = base64_decode($privatekey);
+				// migrate GCM nonce to CTR counter,
+				// we don't use GCM so that broken
+				// integrity data do not break the
+				// decryption
+				$counter = convertGCMtoCTR($nonce, $secret, "aes-256-ecb");
+
+				// decrypt private key
+				$privatekey = openssl_decrypt($ciphertext,
+				                              "aes-256-ctr",
+				                              $secret,
+				                              OPENSSL_RAW_DATA,
+				                              $counter);
 				if (false !== $privatekey) {
-					$res = openssl_pkey_get_private($privatekey);
-					if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
-						$sslInfo = openssl_pkey_get_details($res);
-						if (array_key_exists("key", $sslInfo)) {
-							$result = $privatekey;
+					// base64-decode again just for good measure
+					$privatekey = base64_decode($privatekey);
+					if (false !== $privatekey) {
+						$res = openssl_pkey_get_private($privatekey);
+						if (is_resource($res) || ($res instanceof OpenSSLAsymmetricKey)) {
+							$sslInfo = openssl_pkey_get_details($res);
+							if (array_key_exists("key", $sslInfo)) {
+								$result = $privatekey;
+							}
+						} else {
+							debug("decrypted content is not a privatekey");
 						}
 					} else {
-						debug("decrypted content is not a privatekey");
+						debug("decrypted content is not base64-encoded");
 					}
 				} else {
-					debug("decrypted content is not base64-encoded");
+					debug("privatekey could not be decrypted: ".openssl_error_string());
 				}
-			} else {
-				debug("privatekey could not be decrypted: ".openssl_error_string());
+
+				// take a shortcut
+				if (false !== $result) {
+					break;
+				}
+                        }
+
+			// if we do not have a result then print a debug message
+			if (false === $result) {
+				debug("privatekey is encrypted with an unsupported method");
 			}
 		} else {
 			debug("privatekey file has wrong structure");

@@ -1,5 +1,9 @@
 # Changelog
 
+## v31.0.0 (2025-03-16)
+
+* [add E2E improvements and Nextcloud31 test (#62)](https://github.com/nextcloud/encryption-recovery-tools/pull/62)
+
 ## v30.0.0 (2025-03-16)
 
 * [add support for metadata format version 2.0 (#51)](https://github.com/nextcloud/encryption-recovery-tools/pull/51)
