@@ -1,12 +1,13 @@
 # Changelog
 
-## v??.?.? (????-??-??)
+## v30.0.0 (2025-03-16)
 
 * [add support for metadata format version 2.0 (#51)](https://github.com/nextcloud/encryption-recovery-tools/pull/51)
-* [add skip_files tests (#53)](https://github.com/nextcloud/encryption-recovery-tools/pull/53)
+* [add skip\_files tests (#53)](https://github.com/nextcloud/encryption-recovery-tools/pull/53)
 * [update CHANGELOG.md (#54)](https://github.com/nextcloud/encryption-recovery-tools/pull/54)
 * [increase decryption block size (#55)](https://github.com/nextcloud/encryption-recovery-tools/pull/55)
 * [improve config type checks (#58)](https://github.com/nextcloud/encryption-recovery-tools/pull/58)
+* [add Nextcloud30 test (#60)](https://github.com/nextcloud/encryption-recovery-tools/pull/60)
 
 ## v29.0.0 (2024-05-31)
 

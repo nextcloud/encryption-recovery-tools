@@ -1,4 +1,4 @@
-# encryption-recovery-tools
+# Nextcloud Encryption Recovery Tools
 
 ## End-to-End Encryption
 

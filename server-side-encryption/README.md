@@ -1,4 +1,4 @@
-# Server-Side Encryption
+# Nextcloud Server-Side Encryption
 
 ## Description
 

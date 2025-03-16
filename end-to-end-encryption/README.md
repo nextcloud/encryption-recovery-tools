@@ -1,4 +1,4 @@
-# End-to-End Encryption
+# Nextcloud End-to-End Encryption
 
 ## Description
 
