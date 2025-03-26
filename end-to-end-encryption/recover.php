@@ -1772,11 +1772,11 @@
 							$result = 4;
 						}
 					} else {
-						println("ERROR: MANDATORY GMP EXTENSION IS NOT LOADED");
+						println("ERROR: MANDATORY ZLIB EXTENSION IS NOT LOADED");
 						$result = 3;
 					}
 				} else {
-					println("ERROR: MANDATORY ZLIB EXTENSION IS NOT LOADED");
+					println("ERROR: MANDATORY GMP EXTENSION IS NOT LOADED");
 					$result = 2;
 				}
 			} else {
