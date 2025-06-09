@@ -1,5 +1,10 @@
 # Changelog
 
+## v??.?.? (????-??-??)
+
+* [add skipped integrity checking to README (#65)](https://github.com/nextcloud/encryption-recovery-tools/pull/65)
+* [Fix swapped GMP and ZLIB error messages (#64)](https://github.com/nextcloud/encryption-recovery-tools/pull/64)
+
 ## v31.0.0 (2025-03-16)
 
 * [add E2E improvements and Nextcloud31 test (#62)](https://github.com/nextcloud/encryption-recovery-tools/pull/62)
@@ -35,7 +40,7 @@
 * [Move testdata (#16)](https://github.com/nextcloud/encryption-recovery-tools/pull/16)
 * [improve decryptPrivateKey (#17)](https://github.com/nextcloud/encryption-recovery-tools/pull/17)
 * [support decryption infix #(18)](https://github.com/nextcloud/encryption-recovery-tools/pull/18)
-* [support several values for INSTANCEID, SECRET, RECOVERY_PASSWORD and USER_PASSWORDS (#19)](https://github.com/nextcloud/encryption-recovery-tools/pull/19)
+* [support several values for INSTANCEID, SECRET, RECOVERY\_PASSWORD and USER\_PASSWORDS (#19)](https://github.com/nextcloud/encryption-recovery-tools/pull/19)
 * [fix typo (#21)](https://github.com/nextcloud/encryption-recovery-tools/pull/21)
 * [introduce end-to-end encryption support (#23)](https://github.com/nextcloud/encryption-recovery-tools/pull/23)
 * [Fix default (#24)](https://github.com/nextcloud/encryption-recovery-tools/pull/24)

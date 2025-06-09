@@ -5,6 +5,11 @@
 This script can recover your precious files if you encrypted them with the **Nextcloud Server-Side Encryption** and still have access to the data directory and the Nextcloud configuration file (`config/config.php`).
 It supports the master-key encryption, the user-key encryption and can even use the rescue key if it had been enabled as well as the public sharing key for files that had been publicly shared.
 
+## Security Warning
+
+The main goal of the Nextcloud Encryption Recovery Tools is to recover the contents of encrypted files in case there is a catastrophic failure.
+For that reason, the recovery scripts **do not** cryptographically verify the integrity of the files while processing them in order to be able to recover the contents of as many encrypted files as possible.
+
 ## Configuration
 
 In order to use the script you have to configure the given values below:

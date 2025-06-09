@@ -4,6 +4,12 @@
 
 This script can recover your precious files if you encrypted them with the **Nextcloud End-to-End Encryption** and still have access to the data directory and the user mnemonics.
 
+## Security Warning
+
+The main goal of the Nextcloud Encryption Recovery Tools is to recover the contents of encrypted files in case there is a catastrophic failure.
+For that reason, the recovery scripts **do not** cryptographically verify the integrity of the files while processing them in order to be able to recover the contents of as many encrypted files as possible.
+_(On the contrary, the recovery script intentionally decrypts the AES-GCM protected files in AES-CTR mode to skip the integrity check of the Galois/Counter Mode.)_
+
 ## Configuration
 
 In order to use the script you have to configure the given values below:

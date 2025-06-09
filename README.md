@@ -13,6 +13,11 @@ It supports the master-key encryption, the user-key encryption and can even use 
 
 For further information have a look at the [**README**](./server-side-encryption/README.md) of the script.
 
+## Security Warning
+
+The main goal of the Nextcloud Encryption Recovery Tools is to recover the contents of encrypted files in case there is a catastrophic failure.
+For that reason, the recovery scripts **do not** cryptographically verify the integrity of the files while processing them in order to be able to recover the contents of as many encrypted files as possible.
+
 ## Testing
 
 The compatibility with Nextcloud releases is tested with [PHPUnit](https://phpunit.de).
