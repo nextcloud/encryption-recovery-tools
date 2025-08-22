@@ -756,9 +756,9 @@
 
 			// try to decrypt private key with different methods
 			$methods = [["algorithm" => "sha256", "iterations" => 600000],
-                                    ["algorithm" => "sha1",   "iterations" => 600000],
-                                    ["algorithm" => "sha1",   "iterations" =>   1024]];
-                        foreach ($methods as $method) {
+			            ["algorithm" => "sha1",   "iterations" => 600000],
+			            ["algorithm" => "sha1",   "iterations" =>   1024]];
+			foreach ($methods as $method) {
 				// take method parameters
 				$algorithm  = $method["algorithm"];
 				$iterations = $method["iterations"];
@@ -807,7 +807,7 @@
 				if (false !== $result) {
 					break;
 				}
-                        }
+			}
 
 			// if we do not have a result then print a debug message
 			if (false === $result) {
@@ -860,7 +860,7 @@
 								$result[] = base64_decode($element);
 							}
 						}
-                                        }
+					}
 					break;
 
 				case 2:
