@@ -1,5 +1,6 @@
 # do not export certain files
 /.gitattributes                     export-ignore
+/.github                            export-ignore
 /.gitignore                         export-ignore
 /phpunit.end-to-end-encryption.xml  export-ignore
 /phpunit.server-side-encryption.xml export-ignore
