@@ -2,6 +2,7 @@
 /.gitattributes                     export-ignore
 /.github                            export-ignore
 /.gitignore                         export-ignore
+/AGENTS.md                          export-ignore
 /phpunit.end-to-end-encryption.xml  export-ignore
 /phpunit.server-side-encryption.xml export-ignore
 /phpunit.sh                         export-ignore
