@@ -5,7 +5,7 @@
 * [Fix swapped GMP and ZLIB error messages (#64)](https://github.com/nextcloud/encryption-recovery-tools/pull/64)
 * [add skipped integrity checking to README (#65)](https://github.com/nextcloud/encryption-recovery-tools/pull/65)
 * [fix code indentations (#66)](https://github.com/nextcloud/encryption-recovery-tools/pull/66)
-* [add Nextcloud32, Nextcloud33 and Nextcloud34 test (#71)](https://github.com/nextcloud/encryption-recovery-tools/pull/71)
+* [add Nextcloud32, Nextcloud33 and Nextcloud34 test (#73)](https://github.com/nextcloud/encryption-recovery-tools/pull/73)
 
 ## v31.0.0 (2025-03-16)
 
