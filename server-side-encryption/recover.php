@@ -3,7 +3,7 @@
 
 	# ./server-side-encryption/recover.php
 	#
-	# Copyright (c) 2023-2025, Yahe <hello@yahe.sh>
+	# Copyright (c) 2023-2026, weizenspreu <hello@weizenspr.eu>
 	# Copyright (c) 2019-2023, SysEleven GmbH
 	# All rights reserved.
 	#
