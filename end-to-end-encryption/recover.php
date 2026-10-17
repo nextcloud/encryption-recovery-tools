@@ -239,6 +239,7 @@
 	config("VERSION_1",  1);
 	config("VERSION_12", 1.2);
 	config("VERSION_20", "2.0");
+	config("VERSION_21", "2.1");
 
 	// ===== HELPER FUNCTIONS =====
 
@@ -651,7 +652,7 @@
 						                            $nonce);
 						if (false !== $metadata) {
 							// GZIP-decompress metadata
-							$metadata = gzdecode($metadata);
+							$metadata = @gzdecode($metadata);
 							if (false !== $metadata) {
 								$metadata = json_decode($metadata, true, 4, JSON_OBJECT_AS_ARRAY);
 
@@ -888,7 +889,8 @@
 
 		if (is_array($json)) {
 			if (array_key_exists(METADATA_VERSION, $json) &&
-			    (VERSION_20 === $json[METADATA_VERSION])) {
+			    ((VERSION_20 === $json[METADATA_VERSION]) ||
+			     (VERSION_21 === $json[METADATA_VERSION]))) {
 				$result = 2;
 			} else {
 				if (array_key_exists(METADATA_METADATA, $json) &&

@@ -11,6 +11,7 @@ include_once(__DIR__."/main.php");
 final class <classname> extends main {
 	const EXTERNAL_STORAGES = [];
 	const SOURCEPATHS       = [];
+	const TEST_MNEMONICS    = ["test"  => ""];
 	const USER_MNEMONICS    = ["admin" => ""];
 	const VERSION           = "";
 }
@@ -149,6 +150,34 @@ class main extends PHPUnit\Framework\TestCase {
 			static::assertSame(0, $result);
 			static::compare_dir(__DIR__."/../../data/end-to-end-encryption/".static::VERSION."/original/",
 			                    __DIR__."/../../tmp/");
+		} else {
+			// prevent risky test rating
+			static::assertTrue(true);
+		}
+	}
+
+	public function test_test() {
+		if (is_dir(__DIR__."/../../data/end-to-end-encryption/".static::VERSION."/test/admin/files/test/")) {
+			putenv("TESTING=".           "true");
+			putenv("DATADIRECTORY=".     __DIR__."/../../data/end-to-end-encryption/".static::VERSION."/test/");
+			putenv("DEBUG_MODE=".        "true");
+			putenv("DEBUG_MODE_VERBOSE="."true");
+			putenv("EXTERNAL_STORAGES=". static::array_to_env(static::EXTERNAL_STORAGES));
+			putenv("USER_MNEMONICS=".    static::wrong_mnemonics(static::TEST_MNEMONICS)." ".static::prepare_mnemonics(static::TEST_MNEMONICS));
+
+			include(__DIR__."/../../../end-to-end-encryption/recover.php");
+
+			if (!static::SHOW_OUTPUT) {
+				ob_start();
+			}
+			$result = main(array_merge([__FILE__, __DIR__."/../../tmp/"], static::prepare_sourcepaths(static::SOURCEPATHS)));
+			if (!static::SHOW_OUTPUT) {
+				ob_end_clean();
+			}
+
+			static::assertSame(0, $result);
+			static::compare_dir(__DIR__."/../../data/end-to-end-encryption/".static::VERSION."/original/admin/files/test/",
+			                    __DIR__."/../../tmp/admin/files/test/");
 		} else {
 			// prevent risky test rating
 			static::assertTrue(true);
