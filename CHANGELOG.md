@@ -1,5 +1,10 @@
 # Changelog
 
+## v35.0.0 (2026-10-17)
+
+* [Support e2e metadata version 2.1 (#75)](https://github.com/nextcloud/encryption-recovery-tools/pull/75)
+* [add Nextcloud35 test (#76)](https://github.com/nextcloud/encryption-recovery-tools/pull/76)
+
 ## v34.0.1 (2026-08-30)
 
 * [Fix swapped GMP and ZLIB error messages (#64)](https://github.com/nextcloud/encryption-recovery-tools/pull/64)
